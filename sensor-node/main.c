@@ -5,38 +5,38 @@
 #include "inc/bosch/bme680.h"
 
 // sensor readings
-struct sensor_readings 
+struct sensor_reading
 {
     uint8_t humidity;
     uint8_t co2;
-    int16_t temp_celsius;
+    int16_t temp_celcius;
     uint8_t noise;
     uint8_t motion;
 };
 
-void print_sensor_value(struct sensor_readings sr)
+void print_sensor_value(struct sensor_reading sensor)
 {
-    printf("Sensor 1: %dunit humidity", sr.humidity);
-    printf("%dunit co2, %dC temperature\n", sr.co2, sr.temp_celsius);
-    printf("Sensor 2: %ddB noise\n", sr.noise);
-    printf("Sensor 3: %dunit motion\n", sr.noise);
+    printf("Sensor 1: %dunit humidity", sensor.humidity);
+    printf("%dunit co2, %dC temperature\n", sensor.co2, sensor.temp_celcius);
+    printf("Sensor 2: %ddB noise\n", sensor.noise);
+    printf("Sensor 3: %dunit motion\n", sensor.noise);
 }
 
-void read_sensor(struct sensor_reading sr)
+void read_sensor(struct sensor_reading sensor)
 {
     while (1) {
-        sr.temp_celcius = bme680_read_temp();
-        print_sensor_value(sr);
+        sensor.temp_celcius = bme680_read_temp();
+        print_sensor_value(sensor);
         sleep_ms(500);
     }
 }
 
 int main()
 {
-    struct sensor_readings sr = {0, 0, 0, 0, 0};
-    
+    struct sensor_reading sensor = {0, 0, 0, 0, 0};
+
     bme680_init();
-    read_sensor(sr);
+    read_sensor(sensor);
 
     return 0;
 }

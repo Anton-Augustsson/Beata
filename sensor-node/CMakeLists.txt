@@ -2,23 +2,20 @@ cmake_minimum_required(VERSION 3.13)
 
 include(pico_sdk_import.cmake)
 
-project(beata)
+project(sensor-node)
 
 set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
 
 set(PICO_BOARD pico)
 
-set(path_bosch inc/bosch)
-add_library(LibBme680 path_bosch/bme680.cpp path_bosch/bme680.hpp)
 
 add_executable(
-    beata main.c
+    sensor-node main.c
 )
 
-pico_add_extra_outputs(beata)
+pico_add_extra_outputs(sensor-node)
 target_link_libraries(
-    beata
+    sensor-node
     pico_stdlib
-    LibBme680
 )
