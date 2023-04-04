@@ -1,4 +1,6 @@
+#include <string.h>
 #include "bme680.h"
+#include "bme680_reg.h"
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "pico/binary_info.h"
@@ -25,11 +27,11 @@ to_celsius(uint8_t data[3])
 	   which corresponds to the current raw reading of the sensor. */
 	uint32_t temp_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
 
-  uint16_t par_t1 = (sensor_data->temp_calib_params[1] << 8) 
-                  | (sensor_data->temp_calib_params[0] << 0);
-  uint16_t par_t2 = (sensor_data->temp_calib_params[3] << 8) 
-                  | (sensor_data->temp_calib_params[2] << 0);
-  uint8_t par_t3 = sensor_data->temp_calib_params[4];
+  uint16_t par_t1 = (sensor_data.temp_calib_params[1] << 8) 
+                  | (sensor_data.temp_calib_params[0] << 0);
+  uint16_t par_t2 = (sensor_data.temp_calib_params[3] << 8) 
+                  | (sensor_data.temp_calib_params[2] << 0);
+  uint8_t par_t3 = sensor_data.temp_calib_params[4];
 
 	/* Use compensation factors to get more accurate result. */
 	int64_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
@@ -44,7 +46,7 @@ bme680_write(uint8_t reg, uint8_t *val, size_t len)
 {
   uint8_t buf[len + 1];
   buf[0] = reg;
-  memcpy(val, buf[1], sizeof(uint8_t) * len);
+  memcpy(val, &buf[1], sizeof(uint8_t) * len);
   return i2c_write_blocking(i2c_default, BME680_ADDR, buf, len, false) != PICO_ERROR_GENERIC;
 }
 
@@ -68,7 +70,7 @@ uint8_t
 bme680_init()
 {
   // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a Pico)
-  i2c_init(i2c_default, 100 * 1000)
+  i2c_init(i2c_default, 100 * 1000);
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
@@ -77,20 +79,20 @@ bme680_init()
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
   /* Ensure that the sensor is indeed connected and  available for communication. */
-  if (!bme680_read(BME680_ID, &sensor_data->id, 1))
+  if (!bme680_read(BME680_ID, &sensor_data.id, 1))
     return 0;
 
   /* Setup config paramets for sensor */
-  sensor_data->config |= IIR_FILTER_COEFF;
-  bme680_write(BME680_CONFIG, &sensor_data->config, 1);
+  sensor_data.config |= IIR_FILTER_COEFF;
+  bme680_write(BME680_CONFIG, &sensor_data.config, 1);
 
   /* Write configuration for the three types of functionalities */
   /* Temperature & pressure is set at the same register, i.e., 0x74 */
   /* Humidity:    1x oversampling */
   /* Temperature: 2x oversampling */
   /* Pressure:    16x oversampling */
-  bme680_write_value(BME680_CTRL_HUM, HUM_SETTINGS, 1);         
-  bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS, 1); 
+  bme680_write_value(BME680_CTRL_HUM, HUM_SETTINGS);         
+  bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS); 
                                                           
   return 1;
 }
@@ -101,7 +103,7 @@ bme680_read_temp()
   uint8_t buf[3];
 
   /* Start measurement by enabling forced mode. */
-  bme680_write(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS | FORCED_MODE, 1);
+  bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS | FORCED_MODE);
 
  	/* Read the 20-bit value of the temperature from three regs (MSB, LSB, and XLSB). */
 	bme680_read(BME680_TEMP_MSB, &buf[0], 1);
