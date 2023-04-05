@@ -20,6 +20,39 @@ struct bme680_data {
 /* Global variables. */
 static struct bme680_data sensor_data;
 
+/*
+ * Function: to_pascal
+ * ----------------------------
+ *  convert to pascal (pressure) for the pressure
+ *  data values given from the sensor.
+ * 
+ *  data[16]: the calibration parameters, adc value(s),
+ *            that has been loaded the sensor
+ * 
+ *  returns: the pressure (in pascal) given the input data[16]
+ */
+static int32_t
+to_pascal(uint8_t data[16]) {
+  return 0;
+}
+
+/*
+ * Function: to_percent
+ * ----------------------------
+ *   convert to percentage for the humidity data
+ *   values given from the sensor
+ *
+ *   data[16]:  
+ *
+ *   returns: the percentage given the input data[16].
+ */
+static int32_t
+to_percent(uint8_t data[16]) {
+  return 0;
+}
+
+/*
+*/
 static int32_t
 to_celsius(uint8_t data[3])
 {
