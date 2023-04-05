@@ -268,12 +268,11 @@ bme680_init()
     bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS);
 
     prepare_calibration_params();
-    
-    // TODO: run/save temp first when init, and the other sensor values so that
-    // we can use calculations that use the temp reading such as hum.
     bme680_read_temp();
     bme680_read_hum();
     bme680_read_press();
+
+    // All well
     return 1;
 }
 
