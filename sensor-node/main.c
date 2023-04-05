@@ -16,7 +16,7 @@ struct sensor_reading
 
 void print_sensor_value(struct sensor_reading sensor)
 {
-    printf("Sensor 1: %dunit humidity", sensor.humidity);
+    printf("Sensor 1: %dunit humidity ", sensor.humidity);
     printf("%dunit co2, %dC temperature\n", sensor.co2, sensor.temp_celcius);
     printf("Sensor 2: %ddB noise\n", sensor.noise);
     printf("Sensor 3: %dunit motion\n", sensor.noise);
@@ -33,6 +33,7 @@ void read_sensor(struct sensor_reading sensor)
 
 int main()
 {
+    stdio_init_all();
     struct sensor_reading sensor = {0, 0, 0, 0, 0};
 
     bme680_init();
