@@ -178,8 +178,7 @@ to_celsius(uint8_t data[3])
         ((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
     int64_t t_fine = var2 + var3;
 
-    sensor_data.current_temp = ((t_fine * 5) + 128) >> 8;
-    return sensor_data.current_temp;
+    return ((t_fine * 5) + 128) >> 8;
 }
 
 uint8_t
@@ -216,34 +215,44 @@ bme680_init()
     
     // TODO: run/save temp first when init, and the other sensor values so that
     // we can use calculations that use the temp reading such as hum.
+    bme680_read_temp();
+    bme680_read_hum();
+    bme680_read_press();
     return 1;
 }
 
 int32_t
 bme680_read_temp()
 {
-     uint8_t buf[3];
+    uint8_t buf[3];
 
-     /* Start measurement by enabling forced mode. */
-     bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS | FORCED_MODE);
+    /* Start measurement by enabling forced mode. */
+    bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS | FORCED_MODE);
 
-     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
-      * XLSB). */
-     bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
-     bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
-     bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
-     
-     return to_celsius(buf);
+    /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
+     * XLSB). */
+    bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
+    bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
+    bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
+    
+    sensor_data.current_temp = to_celsius(buf);
+    return sensor_data.current_temp;
 }
 
 uint16_t
 bme680_read_hum()
 { 
-    return 0;
+    uint8_t buf[2];
+    // TODO: start mesurement of humidity and read adc values like in temp
+    sensor_data.current_hum = to_percent(buf);
+    return sensor_data.current_hum;
 }
 
 uint16_t 
-bme680_read_gas() 
+bme680_read_press() 
 { 
+    uint8_t buf[3];
+    // TODO: start mesurement of humidity and read adc values like in temp
+    sensor_data.current_press = to_pascal(buf);
     return 0; 
 }
