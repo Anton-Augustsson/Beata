@@ -16,12 +16,40 @@ struct bme680_data {
      uint8_t id, config;
      uint8_t temp_calib_params[5];
      uint8_t press_calib_params[16];
-     uint8_t hum_calib_params[11];
+     uint8_t hum_calib_params[9];
      int32_t current_temp, current_hum, current_press;
 };
 
 /* Global variables. */
 static struct bme680_data sensor_data;
+
+static uint8_t
+bme680_write(uint8_t reg, uint8_t *val, size_t len) 
+{
+     uint8_t buf[len + 1];
+     buf[0] = reg;
+     memcpy(val, &buf[1], sizeof(uint8_t) * len);
+     return i2c_write_blocking(i2c_default, BME680_ADDR, buf, len, false) != PICO_ERROR_GENERIC;
+}
+
+static uint8_t
+bme680_write_value(uint8_t reg, uint8_t val) 
+{
+     return bme680_write(reg, &val, 1);
+}
+
+static uint8_t
+bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
+{
+     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, len, true) == PICO_ERROR_GENERIC)
+        return 0;
+
+     if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
+        return 0;
+
+     return 1;
+}
+
 
 static void
 prepare_calibration_params() 
@@ -31,7 +59,7 @@ prepare_calibration_params()
     bme680_read(BME680_TEMP_PAR_T1_MSB, &sensor_data.temp_calib_params[1], 1);
     bme680_read(BME680_TEMP_PAR_T2_LSB, &sensor_data.temp_calib_params[2], 1);
     bme680_read(BME680_TEMP_PAR_T2_MSB, &sensor_data.temp_calib_params[3], 1);
-    bme680_read(BME680_TEMP_PAR_T3, &sensor_data.temp_calib_params[4]);
+    bme680_read(BME680_TEMP_PAR_T3, &sensor_data.temp_calib_params[4], 1);
 
     // Humidity
     bme680_read(BME680_HUM_PAR_H1_LSB, &sensor_data.hum_calib_params[0], 1);
@@ -92,25 +120,33 @@ to_pascal(uint8_t data[3])
 static int32_t
 to_percent(uint8_t data[2]) 
 { 
+    /* Prepare data */
     /* Concat MSB, LSB (16-bit) values into a single 16-bit value, which
     corresponds to the raw reading of the humidity from the sensor */
-    uint16_t hum_adc = (data[1] << 4) | (data[0] << 0); // is this correct?
+    uint16_t hum_adc = (data[1] << 8) | (data[0] << 0);
 
-    // TODO: check so that the calculations are being done correctly
+    uint16_t par_h1 = ((sensor_data.hum_calib_params[0] & 0x0F) << 8) |
+                       (sensor_data.hum_calib_params[1] << 0);
+    uint16_t par_h2 = ((sensor_data.hum_calib_params[2] & 0xF0) << 8) |
+                       (sensor_data.hum_calib_params[3] << 0);
+    uint8_t par_h3  = sensor_data.hum_calib_params[4];
+    uint8_t par_h4  = sensor_data.hum_calib_params[5];
+    uint8_t par_h5  = sensor_data.hum_calib_params[6];
+    uint8_t par_h6  = sensor_data.hum_calib_params[7];
+    uint8_t par_h7  = sensor_data.hum_calib_params[8];
+
+    /* Perform conversion */
     int32_t temp_scaled = (int32_t)sensor_data.current_temp;
-    int32_t var1 = (int32_t)hum_adc - (int32_t)((int32_t)sensor_data.hum_calib_param[0]) -
-        (((temp_scaled * (int32_t)sensor_data.hum_calib_params[4]) / ((int32_t)100)) >> 1);
-
-    int16_t par_h2 = (sensor_data.hum_calib_params[2] << 8 |
-                      sensor_data.hum_calib_params[4] << 0);
+    int32_t var1 = (int32_t)hum_adc - (int32_t)((int32_t)par_h1 << 4) -
+        (((temp_scaled * (int32_t)par_h3) / ((int32_t)100)) >> 1);
     int32_t var2 = ((int32_t)par_h2 * (((temp_scaled *
-        (int32_t)sensor_data.hum_calib_params[5]) / ((int32_t)100)) +
-        (((temp_scaled * ((temp_scaled * (int32_t)sensor_data.hum_calib_params[6]) /
+        (int32_t)par_h4) / ((int32_t)100)) +
+        (((temp_scaled * ((temp_scaled * (int32_t)par_h5) /
         ((int32_t)100))) >> 6) / ((int32_t)100)) + ((int32_t)(1 << 14)))) >> 10;
 
      int32_t var3 = var1 * var2;
-     int32_t var4 = (((int32_t)sensor_data.hum_calib_params[7] << 7) +
-        ((temp_scaled * (int32_t)sensor_data.hum_calib_params[8]) / ((int32_t)100))) >> 4;
+     int32_t var4 = (((int32_t)par_h6 << 7) +
+        ((temp_scaled * (int32_t)par_h7) / ((int32_t)100))) >> 4;
 
     int32_t var5 = ((var3 >> 14) * (var3 >> 14)) >> 10;
     int32_t var6 = (var4 * var5) >> 1;
@@ -124,52 +160,26 @@ to_percent(uint8_t data[2])
 static int32_t
 to_celsius(uint8_t data[3]) 
 {
-     /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
-        value, which corresponds to the current raw reading of the sensor. */
-     uint32_t temp_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
+    /* Prepare data */
+    /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
+       value, which corresponds to the current raw reading of the sensor. */
+    uint32_t temp_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
 
-     uint16_t par_t1 = (sensor_data.temp_calib_params[1] << 8) |
-                       (sensor_data.temp_calib_params[0] << 0);
-     uint16_t par_t2 = (sensor_data.temp_calib_params[3] << 8) |
-                       (sensor_data.temp_calib_params[2] << 0);
-     uint8_t par_t3 = sensor_data.temp_calib_params[4];
+    uint16_t par_t1 = (sensor_data.temp_calib_params[1] << 8) |
+                      (sensor_data.temp_calib_params[0] << 0);
+    uint16_t par_t2 = (sensor_data.temp_calib_params[3] << 8) |
+                      (sensor_data.temp_calib_params[2] << 0);
+    uint8_t par_t3 = sensor_data.temp_calib_params[4];
 
-     /* Use compensation factors to get more accurate result. */
-     int64_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
-     int64_t var2 = (var1 * (int32_t)par_t2) >> 11;
-     int64_t var3 =
-         ((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
-     int64_t t_fine = var2 + var3;
+    /* Perform conversion */
+    int64_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
+    int64_t var2 = (var1 * (int32_t)par_t2) >> 11;
+    int64_t var3 =
+        ((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
+    int64_t t_fine = var2 + var3;
 
-     sensor_data.current_temp = ((t_fine * 5) + 128) >> 8;
-     return sensor_data.current_temp;
-}
-
-static uint8_t
-bme680_write(uint8_t reg, uint8_t *val, size_t len) 
-{
-     uint8_t buf[len + 1];
-     buf[0] = reg;
-     memcpy(val, &buf[1], sizeof(uint8_t) * len);
-     return i2c_write_blocking(i2c_default, BME680_ADDR, buf, len, false) != PICO_ERROR_GENERIC;
-}
-
-static uint8_t
-bme680_write_value(uint8_t reg, uint8_t val) 
-{
-     return bme680_write(reg, &val, 1);
-}
-
-static uint8_t
-bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
-{
-     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, len, true) == PICO_ERROR_GENERIC)
-        return 0;
-
-     if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
-        return 0;
-
-     return 1;
+    sensor_data.current_temp = ((t_fine * 5) + 128) >> 8;
+    return sensor_data.current_temp;
 }
 
 uint8_t
