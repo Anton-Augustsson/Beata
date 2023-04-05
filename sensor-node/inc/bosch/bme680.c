@@ -17,7 +17,7 @@ struct bme680_data {
      uint8_t temp_calib_params[5];
      uint8_t press_calib_params[16];
      uint8_t hum_calib_params[9];
-     int32_t current_temp, current_hum, current_press;
+     int32_t t_fine, current_temp, current_hum, current_press;
 };
 
 /* Global variables. */
@@ -97,14 +97,63 @@ prepare_calibration_params()
  *  convert to pascal (pressure) for the pressure
  *  data values given from the sensor.
  *
- *  data[3]: adc value(s) that has been read the sensor
+ *  data[3]: ADC value(s) that has been read the sensor
  *
  *  returns: the pressure (in pascal) given the input data[16]
  */
 static int32_t
 to_pascal(uint8_t data[3]) 
 {
-    return 0;
+    /* Prepare data */
+    /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
+       value, which corresponds to the current raw reading of the sensor. */
+    uint16_t press_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
+
+    uint16_t par_p1     = (sensor_data.press_calib_params[0] << 8) |
+                          (sensor_data.press_calib_params[1] << 0);
+    uint16_t par_p2     = (sensor_data.press_calib_params[2] << 8) |
+                          (sensor_data.press_calib_params[3] << 0);
+    uint16_t par_p4     = (sensor_data.press_calib_params[5] << 8) |
+                          (sensor_data.press_calib_params[6] << 0);
+    uint16_t par_p5     = (sensor_data.press_calib_params[7] << 8) |
+                          (sensor_data.press_calib_params[8] << 0);
+    uint16_t par_p8     = (sensor_data.press_calib_params[11] << 8) |
+                          (sensor_data.press_calib_params[12] << 0);
+    uint16_t par_p9     = (sensor_data.press_calib_params[13] << 8) |
+                          (sensor_data.press_calib_params[14] << 0);
+    uint8_t par_p3      = sensor_data.press_calib_params[4];
+    uint8_t par_p6      = sensor_data.press_calib_params[9];
+    uint8_t par_p7      = sensor_data.press_calib_params[10];
+    uint8_t par_p10     = sensor_data.press_calib_params[15];
+
+    /* Perform conversion */
+    int32_t var1 = (sensor_data.t_fine >> 1) - 64000;
+    int32_t var2 = ((((var1 >> 2) * (var1 >> 2)) >> 11) * (int32_t)par_p6) >> 2;
+    var2 = var2 + ((var1 * (int32_t)par_p5) << 1);
+    var2 = (var2 >> 2) + ((int32_t)par_p4 << 16);
+    var1 = (((((var1 >> 2) * (var1 >> 2)) >> 13) *
+            ((int32_t)par_p3 << 5)) >> 3) + (((int32_t)par_p2 * var1) >> 1);
+    var1 = var1 >> 18;
+    var1 = ((32768 + var1) * (int32_t)par_p1) >> 15;
+
+    uint32_t press_comp = 1048576 - press_adc;
+    press_comp = (uint32_t)((press_comp - (var2 >> 12)) * ((uint32_t)3125));
+
+    if (press_comp >= (1 << 30))
+        press_comp = ((press_comp / (uint32_t)var1) << 1); 
+    else
+        press_comp = ((press_comp << 1) / (uint32_t)var1);
+
+    var1 = ((int32_t)par_p9 * (int32_t)(((press_comp >> 3) *
+            (press_comp >> 3)) >> 13)) >> 12;
+    var2 = ((int32_t)(press_comp >> 2) * (int32_t)par_p8) >> 13;
+    int32_t var3 = ((int32_t)(press_comp >> 8) * (int32_t)(press_comp >> 8) *  
+            (int32_t)(press_comp >> 8) * (int32_t)par_p10) >> 17;  
+
+    press_comp = (int32_t)(press_comp) +
+            ((var1 + var2 + var3 + ((int32_t)par_p7 << 7)) >> 4);
+
+    return press_comp;
 }
 
 /*
@@ -113,7 +162,7 @@ to_pascal(uint8_t data[3])
  *   convert to percentage for the humidity data
  *   values given from the sensor
  *
- *   data[2]: adc value(s) that has been read the sensor
+ *   data[2]: ADC value(s) that has been read the sensor
  *
  *   returns: the percentage given the input data[2].
  */
@@ -123,7 +172,7 @@ to_percent(uint8_t data[2])
     /* Prepare data */
     /* Concat MSB, LSB (16-bit) values into a single 16-bit value, which
     corresponds to the raw reading of the humidity from the sensor */
-    uint16_t hum_adc = (data[1] << 8) | (data[0] << 0);
+    uint16_t hum_adc = (data[0] << 8) | (data[1] << 0);
 
     uint16_t par_h1 = ((sensor_data.hum_calib_params[0] & 0x0F) << 8) |
                        (sensor_data.hum_calib_params[1] << 0);
@@ -151,11 +200,18 @@ to_percent(uint8_t data[2])
     int32_t var5 = ((var3 >> 14) * (var3 >> 14)) >> 10;
     int32_t var6 = (var4 * var5) >> 1;
 
-    sensor_data.current_hum = (((var3 + var6) >> 10) * ((int32_t)1000)) >> 12;
-    return sensor_data.current_hum;
+    return (((var3 + var6) >> 10) * ((int32_t)1000)) >> 12;
 }
 
 /*
+ * Function: to_celsius
+ * ----------------------------
+ *   convert to celsius for the temperature data
+ *   values given from the sensor
+ *
+ *   data[3]: ADC value(s) that has been read the sensor
+ *
+ *   returns: the temperature given the input data[2] in celcius.
  */
 static int32_t
 to_celsius(uint8_t data[3]) 
@@ -169,16 +225,16 @@ to_celsius(uint8_t data[3])
                       (sensor_data.temp_calib_params[0] << 0);
     uint16_t par_t2 = (sensor_data.temp_calib_params[3] << 8) |
                       (sensor_data.temp_calib_params[2] << 0);
-    uint8_t par_t3 = sensor_data.temp_calib_params[4];
+    uint8_t par_t3  = sensor_data.temp_calib_params[4];
 
     /* Perform conversion */
-    int64_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
-    int64_t var2 = (var1 * (int32_t)par_t2) >> 11;
-    int64_t var3 =
+    int32_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
+    int32_t var2 = (var1 * (int32_t)par_t2) >> 11;
+    int32_t var3 =
         ((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
-    int64_t t_fine = var2 + var3;
+    sensor_data.t_fine = var2 + var3;
 
-    return ((t_fine * 5) + 128) >> 8;
+    return ((sensor_data.t_fine * 5) + 128) >> 8;
 }
 
 uint8_t
