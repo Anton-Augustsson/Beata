@@ -3,7 +3,6 @@
  *
  */
 
-#include "../inc/bosch/bme680.h"
 #include "unit-test-suit-bme680.h"
 
 

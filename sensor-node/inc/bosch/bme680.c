@@ -1,12 +1,5 @@
 #include "bme680.h"
 
-#include <string.h>
-
-#include "bme680_reg.h"
-#include "hardware/i2c.h"
-#include "pico/binary_info.h"
-#include "pico/stdlib.h"
-
 #define FORCED_MODE (1 << 0)
 #define HUM_SETTINGS (1 << 0)
 #define TEMP_PRESS_SETTINGS (1 << 6) | (1 << 4) | (1 << 2)

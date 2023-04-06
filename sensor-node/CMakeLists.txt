@@ -1,52 +1,29 @@
 cmake_minimum_required(VERSION 3.13)
 
-include(pico_sdk_import.cmake)
-
-project(sensor-node)
-
-set(CMAKE_C_STANDARD 11)
-pico_sdk_init()
-
-set(PICO_BOARD pico)
+function(pico_add_extra_outputs)
+  # Do nothing - this is a dummy function
+endfunction()
 
 
-####### Bosch bme680 sensor ########
+OPTION(BUILD_SENSOR_NODE "Build all examples" OFF)
+if(BUILD_SENSOR_NODE)
+  include(pico_sdk_import.cmake)
 
-add_library(bme680_lib inc/bosch/bme680_reg.h inc/bosch/bme680.h inc/bosch/bme680.c)
-target_link_libraries(
-    bme680_lib
-    pico_stdlib
-    hardware_i2c
-)
+  project(sensor-node)
+  set(CMAKE_C_STANDARD 11)
 
+  pico_sdk_init()
+  set(PICO_BOARD pico)
 
-######## Main executable ########
+  add_subdirectory(inc)
+  add_subdirectory(src)
+endif()
 
-add_executable(
-    sensor-node main.c
-)
+OPTION(BUILD_TESTS "Build the test binary" OFF)
+if(BUILD_TESTS)
+  project(sensor-node)
+  set(CMAKE_C_STANDARD 11)
 
-pico_add_extra_outputs(sensor-node)
-target_link_libraries(
-    sensor-node
-    bme680_lib
-    pico_stdlib
-)
-
-
-######## Tests ########
-
-add_library(bme680_test_lib tests/unit-test-suit-bme680.h tests/unit-test-suit-bme680.c)
-target_link_libraries(
-    bme680_test_lib
-    bme680_lib
-)
-
-add_executable(
-    tests tests/cunit-bme680.c
-)
-
-target_link_libraries(
-    tests
-    bme680_test_lib
-)
+  add_subdirectory(inc)
+  add_subdirectory(tests)
+endif()

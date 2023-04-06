@@ -1,8 +1,10 @@
 #include <stdio.h>
+
+#include <stdbool.h>
 #include "pico/time.h"
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
-#include "inc/bosch/bme680.h"
+#include "../inc/bosch/bme680.h"
 
 // sensor readings
 struct sensor_reading
