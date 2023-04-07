@@ -5,13 +5,13 @@
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
 
-#define TEMP_RESOLUTION       100
-
 #define BME680_FORCED_MODE          (0 << 1) | (1 << 0)
 #define BME680_IIR_FILTER1          (0 << 4) | (0 << 3) | (1 << 2)
 #define BME680_HUM_SETTINGS         (1 << 0)
-#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
+// #define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
+#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5)
 #define BME680_READ_VAL             (BME680_TEMP_PRESS_SETTINGS | BME680_FORCED_MODE)
+#define BME680_GAS_WAIT_100MS_HEATUP 0b00111011
 
 
 
@@ -245,15 +245,15 @@ bme680_init()
 {
     /* Ensure that the sensor is indeed connected and available for
      * communication. */
-    if (!bme680_read(BME680_ID, &sensor_data.id, 1)) 
+    if (!bme680_read(BME680_ID, &sensor_data.id, 1)) {
+        printf("ERROR: Could not receive bme680 sensor ID");
         return 0;
+    }
 
-    printf("Received bme680 sensor ID: %d\n", sensor_data.id);
 
     /* Setup config paramets for sensor */
-    sensor_data.config = BME680_IIR_FILTER1;
-    if(bme680_write(BME680_CONFIG, &sensor_data.config, 1))
-        printf("Wrote config to bme680\n");
+    if(!bme680_write_value(BME680_CONFIG, BME680_IIR_FILTER1))
+        printf("ERROR: Could not write config to bme680\n");
 
     prepare_calibration_params();
 
@@ -278,9 +278,11 @@ bme680_read_temp()
     uint8_t buf[3];
 
     /* Start measurement by enabling forced mode. */
+    printf("Starting ADC conversion\n");
     bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
+    sleep_ms(1000);
+    printf("Finsihed ADC conversion\n");
 
-    puts("Reading msb, xlsb, lsb\n");
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB). */
     bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
