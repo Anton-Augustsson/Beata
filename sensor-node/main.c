@@ -14,7 +14,7 @@
 // sensor readings
 struct sensor_reading {
     uint8_t humidity;
-    // uint8_t press;
+    uint8_t press;
     int16_t temp_celcius;
     // uint8_t noise;
     // uint8_t motion;
@@ -23,8 +23,8 @@ struct sensor_reading {
 void 
 print_sensor_value(struct sensor_reading sensor) 
 {
-    // printf("Sensor 1: %d %% humidity ", sensor.humidity);
-    // printf(", %d hPa, %d C temperature\n", sensor.press,
+    // printf("%d %% humidity ", sensor.humidity);
+    // printf(", %d hPa\n", sensor.press);
     // sensor.temp_celcius); printf("Sensor 2: %d dB noise\n", sensor.noise);
     // printf("Sensor 3: %d (cm) motion\n\n", sensor.noise);
     printf("Temperature (C): %d.%02d\n", sensor.temp_celcius / TEMP_RESOLUTION,
@@ -63,6 +63,8 @@ main()
 
     for (;;) {
         sensor.temp_celcius = bme680_read_temp();
+        // sensor.humidity = bme680_read_hum();
+        // sensor.press = bme680_read_press();
         print_sensor_value(sensor);
         sleep_ms(DELAY_MS);
     }

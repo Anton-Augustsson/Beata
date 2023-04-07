@@ -5,10 +5,10 @@
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
 
-#define BME680_FORCED_MODE          (0 << 1) | (1 << 0)
-#define BME680_IIR_FILTER1          (0 << 4) | (0 << 3) | (1 << 2)
-#define BME680_HUM_SETTINGS         (1 << 0)
-#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
+#define BME680_FORCED_MODE          (0xFF & 0x01) // (0 << 1) | (1 << 0)
+#define BME680_IIR_FILTER1          (0xFF & 0x04) // (0 << 4) | (0 << 3) | (1 << 2)
+#define BME680_HUM_SETTINGS         (0xFF & 0x01) // (1 << 0)
+#define BME680_TEMP_PRESS_SETTINGS  (0xFF & 0x34) // (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
 #define BME680_READ_VAL             (BME680_TEMP_PRESS_SETTINGS | BME680_FORCED_MODE)
 
 
@@ -177,8 +177,8 @@ to_percent(uint8_t data[2])
 
     uint16_t par_h1 =   (sensor_data.hum_calib_params[1] << 8) | 
                         ((sensor_data.hum_calib_params[0] & 0x0F) << 0);
-    uint16_t par_h2 =  (sensor_data.hum_calib_params[3] << 8) |
-                       ((sensor_data.hum_calib_params[2] & 0xF0) << 0);
+    uint16_t par_h2 =   (sensor_data.hum_calib_params[3] << 8) |
+                        ((sensor_data.hum_calib_params[2] & 0xF0) << 0);
     uint8_t par_h3  = sensor_data.hum_calib_params[4];
     uint8_t par_h4  = sensor_data.hum_calib_params[5];
     uint8_t par_h5  = sensor_data.hum_calib_params[6];
@@ -241,6 +241,7 @@ to_celsius(uint8_t data[3])
 uint8_t
 bme680_init()
 {
+    uint8_t buf[2];
     /* Ensure that the sensor is indeed connected and available for
      * communication. */
     if (!bme680_read(BME680_ID, &sensor_data.id, 1)) {
@@ -250,8 +251,11 @@ bme680_init()
 
 
     /* Setup config paramets for sensor */
-    if(!bme680_write_value(BME680_CONFIG, BME680_IIR_FILTER1))
-        printf("ERROR: Could not write config to bme680\n");
+    buf[0] = BME680_CONFIG;
+    buf[1] = BME680_IIR_FILTER1;
+    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false);
+    // if(!bme680_write_value(BME680_CONFIG, BME680_IIR_FILTER1))
+    //     printf("ERROR: Could not write config to bme680\n");
 
     prepare_calibration_params();
 
@@ -260,12 +264,18 @@ bme680_init()
     /* Humidity:    1x oversampling */
     /* Temperature: 2x oversampling */
     /* Pressure:    16x oversampling */
-    bme680_write_value(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
-    bme680_write_value(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
+    // buf[0] = BME680_CTRL_HUM;
+    // buf[1] = 0b00000001;
+    // i2c_write_blocking(i2c_default, BME680_ADDR, &tx_register[0], 2, false);
+    buf[0] = BME680_CTRL_MEAS;
+    buf[1] = 0b01010100;
+    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false); 
+    // bme680_write_value(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
+    // bme680_write_value(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
 
     bme680_read_temp();
-    // bme680_read_hum();
-    // bme680_read_press();
+    bme680_read_hum();
+    bme680_read_press();
 
     return 1;
 }
@@ -273,7 +283,9 @@ bme680_init()
 void start_ADC_conversion() {
     /* Start measurement by enabling forced mode. */
     printf("Starting ADC conversion\n");
-    bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
+    // bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
+    uint8_t buf[2] = {BME680_CTRL_MEAS, BME680_READ_VAL};
+    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false);
     printf("Finsihed ADC conversion\n");
 }
 
@@ -282,6 +294,7 @@ bme680_read_temp()
 {
     uint8_t buf[3];
 
+    // TODO: should this be ran at the other three readings? might overload the sensor
     start_ADC_conversion();
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB). */
@@ -291,7 +304,6 @@ bme680_read_temp()
     bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
     bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
 
-    printf("MSB %d\nLSB %d\nXLSB %d\n", buf[0], buf[1], buf[2]);
     sensor_data.current_temp = to_celsius(buf);
     return sensor_data.current_temp;
 }
@@ -300,7 +312,9 @@ uint16_t
 bme680_read_hum()
 { 
     uint8_t buf[2];
-    // TODO: start mesurement of humidity and read adc values like in temp
+    bme680_read(BME680_HUM_ADC_MSB, &buf[0], 1);
+    bme680_read(BME680_HUM_ADC_LSB, &buf[1], 1);
+
     sensor_data.current_hum = to_percent(buf);
     return sensor_data.current_hum;
 }
@@ -309,7 +323,10 @@ uint16_t
 bme680_read_press() 
 { 
     uint8_t buf[3];
-    // TODO: start mesurement of humidity and read adc values like in temp
+    bme680_read(BME680_PRESS_ADC_MSB, &buf[0], 1);
+    bme680_read(BME680_PRESS_ADC_LSB, &buf[1], 1);
+    bme680_read(BME680_PRESS_ADC_XLSB, &buf[2], 1);
+
     sensor_data.current_press = to_pascal(buf);
     return 0; 
 }
