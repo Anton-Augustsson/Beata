@@ -23,12 +23,14 @@ struct sensor_reading {
 void 
 print_sensor_value(struct sensor_reading sensor) 
 {
-    // printf("%d %% humidity ", sensor.humidity);
-    // printf(", %d hPa\n", sensor.press);
-    // sensor.temp_celcius); printf("Sensor 2: %d dB noise\n", sensor.noise);
-    // printf("Sensor 3: %d (cm) motion\n\n", sensor.noise);
+    printf("=============== BME680 =================\n");
+    printf("Humidity (%%): %d\n", sensor.humidity);
+    printf("Pressure (hPa): %d\n", sensor.press);
     printf("Temperature (C): %d.%02d\n", sensor.temp_celcius / TEMP_RESOLUTION,
            sensor.temp_celcius % TEMP_RESOLUTION);
+    printf("========================================\n");
+    // sensor.temp_celcius); printf("Sensor 2: %d dB noise\n", sensor.noise);
+    // printf("Sensor 3: %d (cm) motion\n\n", sensor.noise);
 }
 
 void 
@@ -50,21 +52,25 @@ main()
     stdio_init_all();
     init_serial_connections();
     struct sensor_reading sensor = {0, 0};
+    printf("Starting sensor-node and attempting connections\n");
 
     /* Configure BME680 */
-    printf("Starting sensor-node and attempting connections\n");
     while (!bme680_init()) {
-        printf("ERROR: could not connect to sensor. Trying again.\n");
+        printf("ERROR: could not connect to bme680. Trying again.\n");
         sleep_ms(DELAY_MS / 6);
     }
 
-    printf("SUCCESS: Connected to sensor.\n");
     printf("Starting readings...\n");
 
     for (;;) {
-        sensor.temp_celcius = bme680_read_temp();
-        // sensor.humidity = bme680_read_hum();
-        // sensor.press = bme680_read_press();
+        /* Can be more fine-grained but this checks so that the bme680
+         * sensor is connected at all to be able to fetch readings */
+        if (bme680_query_data()) {
+            sensor.temp_celcius = bme680_read_temp();
+            sensor.humidity = bme680_read_hum();
+            sensor.press = bme680_read_press();
+        }
+
         print_sensor_value(sensor);
         sleep_ms(DELAY_MS);
     }

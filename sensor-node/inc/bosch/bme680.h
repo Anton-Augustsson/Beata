@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 uint8_t bme680_init();
+uint8_t bme680_query_data();
 int32_t bme680_read_temp();
 uint16_t bme680_read_hum();
 uint16_t bme680_read_press();

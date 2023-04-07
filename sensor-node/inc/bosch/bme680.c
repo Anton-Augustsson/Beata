@@ -14,41 +14,36 @@
 
 
 struct bme680_data {
-     uint8_t id, config;
-     uint8_t temp_calib_params[5];
-     uint8_t press_calib_params[16];
-     uint8_t hum_calib_params[9];
-     int32_t t_fine, current_temp, current_hum, current_press;
+    uint8_t id, config;
+    uint8_t temp_calib_params[5];
+    uint8_t press_calib_params[16];
+    uint8_t hum_calib_params[9];
+    int32_t t_fine, current_temp, current_hum, current_press;
 };
 
 /* Global variables. */
 static struct bme680_data sensor_data;
 
 static uint8_t
-bme680_write(uint8_t reg, uint8_t *val, size_t len) 
+bme680_write(uint8_t reg, uint8_t val) 
 {
-     uint8_t buf[len + 1];
-     buf[0] = reg;
-     memcpy(val, &buf[1], sizeof(uint8_t) * len);
-     return i2c_write_blocking(i2c_default, BME680_ADDR, buf, len, false) != PICO_ERROR_GENERIC;
-}
-
-static uint8_t
-bme680_write_value(uint8_t reg, uint8_t val) 
-{
-     return bme680_write(reg, &val, 1);
+    uint8_t buf[2] = {reg, val};
+    /* A '2' is chosen here because you are always sending an array with 2
+     * elements. One element as the address of where to write, and one with the
+     * value. */
+    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false) != PICO_ERROR_GENERIC;
 }
 
 static uint8_t
 bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
 {
-     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) == PICO_ERROR_GENERIC)
-        return 0;
+    if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) == PICO_ERROR_GENERIC)
+       return 0;
 
-     if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
-        return 0;
+    if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
+       return 0;
 
-     return 1;
+    return 1;
 }
 
 
@@ -98,17 +93,17 @@ prepare_calibration_params()
  *  convert to pascal (pressure) for the pressure
  *  data values given from the sensor.
  *
- *  data[3]: ADC value(s) that has been read the sensor
+ *  raw_data[3]: ADC value(s) that has been read the sensor
  *
- *  returns: the pressure (in pascal) given the input data[16]
+ *  returns: the pressure (in pascal) given the input raw_data[16]
  */
 static int32_t
-to_pascal(uint8_t data[3]) 
+to_pascal(uint8_t raw_data[3]) 
 {
     /* Prepare data */
     /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
        value, which corresponds to the current raw reading of the sensor. */
-    uint16_t press_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
+    uint16_t press_adc = (raw_data[0] << 12) | (raw_data[1] << 4) | (raw_data[2] >> 4);
 
     uint16_t par_p1     = (sensor_data.press_calib_params[1] << 8) |
                           (sensor_data.press_calib_params[0] << 0);
@@ -165,15 +160,15 @@ to_pascal(uint8_t data[3])
  *
  *   data[2]: ADC value(s) that has been read the sensor
  *
- *   returns: the percentage given the input data[2].
+ *   returns: the percentage given the input raw_data[2].
  */
 static int32_t
-to_percent(uint8_t data[2]) 
+to_percent(uint8_t raw_data[2]) 
 { 
     /* Prepare data */
     /* Concat MSB, LSB (16-bit) values into a single 16-bit value, which
-    corresponds to the raw reading of the humidity from the sensor */
-    uint16_t hum_adc = (data[0] << 8) | (data[1] << 0);
+     * corresponds to the raw reading of the humidity from the sensor */
+    uint16_t hum_adc = (raw_data[0] << 8) | (raw_data[1] << 0);
 
     uint16_t par_h1 =   (sensor_data.hum_calib_params[1] << 8) | 
                         ((sensor_data.hum_calib_params[0] & 0x0F) << 0);
@@ -210,17 +205,17 @@ to_percent(uint8_t data[2])
  *   convert to celsius for the temperature data
  *   values given from the sensor
  *
- *   data[3]: ADC value(s) that has been read the sensor
+ *   raw_data[3]: ADC value(s) that has been read the sensor
  *
- *   returns: the temperature given the input data[2] in celcius.
+ *   returns: the temperature given the input raw_data[2] in celcius.
  */
 static int32_t
-to_celsius(uint8_t data[3]) 
+to_celsius(uint8_t raw_data[3]) 
 {
     /* Prepare data */
     /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
-       value, which corresponds to the current raw reading of the sensor. */
-    uint32_t temp_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
+     * value, which corresponds to the current raw reading of the sensor. */
+    uint32_t temp_adc = (raw_data[0] << 12) | (raw_data[1] << 4) | (raw_data[2] >> 4);
 
     uint16_t par_t1 = (sensor_data.temp_calib_params[1] << 8) |
                       (sensor_data.temp_calib_params[0] << 0);
@@ -241,7 +236,6 @@ to_celsius(uint8_t data[3])
 uint8_t
 bme680_init()
 {
-    uint8_t buf[2];
     /* Ensure that the sensor is indeed connected and available for
      * communication. */
     if (!bme680_read(BME680_ID, &sensor_data.id, 1)) {
@@ -249,13 +243,11 @@ bme680_init()
         return 0;
     }
 
+    uint8_t buf[2];
 
     /* Setup config paramets for sensor */
-    buf[0] = BME680_CONFIG;
-    buf[1] = BME680_IIR_FILTER1;
-    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false);
-    // if(!bme680_write_value(BME680_CONFIG, BME680_IIR_FILTER1))
-    //     printf("ERROR: Could not write config to bme680\n");
+    if(!bme680_write(BME680_CONFIG, BME680_IIR_FILTER1))
+        printf("ERROR: Could not write config to bme680\n");
 
     prepare_calibration_params();
 
@@ -264,15 +256,10 @@ bme680_init()
     /* Humidity:    1x oversampling */
     /* Temperature: 2x oversampling */
     /* Pressure:    16x oversampling */
-    // buf[0] = BME680_CTRL_HUM;
-    // buf[1] = 0b00000001;
-    // i2c_write_blocking(i2c_default, BME680_ADDR, &tx_register[0], 2, false);
-    buf[0] = BME680_CTRL_MEAS;
-    buf[1] = 0b01010100;
-    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false); 
-    // bme680_write_value(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
-    // bme680_write_value(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
+    bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
+    bme680_write(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
 
+    /* Intitial run to populate struct */
     bme680_read_temp();
     bme680_read_hum();
     bme680_read_press();
@@ -280,13 +267,11 @@ bme680_init()
     return 1;
 }
 
-void start_ADC_conversion() {
-    /* Start measurement by enabling forced mode. */
-    printf("Starting ADC conversion\n");
-    // bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
-    uint8_t buf[2] = {BME680_CTRL_MEAS, BME680_READ_VAL};
-    i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false);
-    printf("Finsihed ADC conversion\n");
+uint8_t bme680_query_data() {
+    if (bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL) == PICO_ERROR_GENERIC)
+        return 0;
+
+    return 1;
 }
 
 int32_t
@@ -294,15 +279,13 @@ bme680_read_temp()
 {
     uint8_t buf[3];
 
-    // TODO: should this be ran at the other three readings? might overload the sensor
-    start_ADC_conversion();
+    /* initiate an ADC conversion */
+    bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL);
+
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
-     * XLSB). */
-    // i2c_write_blocking(i2c_default, BME680_ADDR, 0x22, 1, true); // keep master in control
-    // i2c_read_blocking(i2c_default, BME680_ADDR, buf, 3, false);
-    bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
-    bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
-    bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
+     * XLSB), in one go, we know that MSB (0x22) -> XLSB (0x24), so we read 3
+     * bytes */
+    bme680_read(BME680_TEMP_ADC_MSB, buf, 3);
 
     sensor_data.current_temp = to_celsius(buf);
     return sensor_data.current_temp;
@@ -312,8 +295,7 @@ uint16_t
 bme680_read_hum()
 { 
     uint8_t buf[2];
-    bme680_read(BME680_HUM_ADC_MSB, &buf[0], 1);
-    bme680_read(BME680_HUM_ADC_LSB, &buf[1], 1);
+    bme680_read(BME680_HUM_ADC_MSB, buf, 2);
 
     sensor_data.current_hum = to_percent(buf);
     return sensor_data.current_hum;
@@ -323,9 +305,7 @@ uint16_t
 bme680_read_press() 
 { 
     uint8_t buf[3];
-    bme680_read(BME680_PRESS_ADC_MSB, &buf[0], 1);
-    bme680_read(BME680_PRESS_ADC_LSB, &buf[1], 1);
-    bme680_read(BME680_PRESS_ADC_XLSB, &buf[2], 1);
+    bme680_read(BME680_PRESS_ADC_MSB, buf, 3);
 
     sensor_data.current_press = to_pascal(buf);
     return 0; 
