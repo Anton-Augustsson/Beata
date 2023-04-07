@@ -21,17 +21,19 @@ target_link_libraries(
 
 
 ######## Main executable ########
-
 add_executable(
     sensor-node main.c
 )
 
-pico_add_extra_outputs(sensor-node)
 target_link_libraries(
     sensor-node
     bme680_lib
     pico_stdlib
+    hardware_i2c
 )
+
+pico_enable_stdio_uart(sensor-node 1)
+pico_add_extra_outputs(sensor-node)
 
 
 ######## Tests ########

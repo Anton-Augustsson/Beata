@@ -1,7 +1,5 @@
-#include "bme680.h"
-
 #include <string.h>
-
+#include "bme680.h"
 #include "bme680_reg.h"
 #include "hardware/i2c.h"
 #include "pico/binary_info.h"
@@ -9,7 +7,7 @@
 
 #define FORCED_MODE (1 << 0)
 #define HUM_SETTINGS (1 << 0)
-#define TEMP_PRESS_SETTINGS (1 << 6) | (1 << 4) | (1 << 2)
+#define TEMP_PRESS_SETTINGS (1 << 6) | (1 << 4) | (0 << 3) | (1 << 2)
 #define IIR_FILTER_COEFF (0 << 4) | (0 << 3) | (1 << 2)
 
 struct bme680_data {
@@ -41,7 +39,7 @@ bme680_write_value(uint8_t reg, uint8_t val)
 static uint8_t
 bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
 {
-     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, len, true) == PICO_ERROR_GENERIC)
+     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) == PICO_ERROR_GENERIC)
         return 0;
 
      if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
@@ -240,24 +238,17 @@ to_celsius(uint8_t data[3])
 uint8_t
 bme680_init()
 {
-    // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
-    // a Pico)
-    i2c_init(i2c_default, 100 * 1000);
-    gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-    gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
-    // Make the I2C pins available to picotool
-    bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN,
-                               PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
-
-    /* Ensure that the sensor is indeed connected and  available for
+    /* Ensure that the sensor is indeed connected and available for
      * communication. */
-    if (!bme680_read(BME680_ID, &sensor_data.id, 1)) return 0;
+    if (!bme680_read(BME680_ID, &sensor_data.id, 1)) 
+        return 0;
+
+    printf("Received bme680 sensor ID: %d\n", sensor_data.id);
 
     /* Setup config paramets for sensor */
-    sensor_data.config |= IIR_FILTER_COEFF;
-    bme680_write(BME680_CONFIG, &sensor_data.config, 1);
+    sensor_data.config = 0x00 | IIR_FILTER_COEFF;
+    if(bme680_write(BME680_CONFIG, &sensor_data.config, 1))
+        printf("Wrote config to bme680\n");
 
     /* Write configuration for the three types of functionalities */
     /* Temperature & pressure is set at the same register, i.e., 0x74 */
@@ -269,10 +260,9 @@ bme680_init()
 
     prepare_calibration_params();
     bme680_read_temp();
-    bme680_read_hum();
-    bme680_read_press();
+    // bme680_read_hum();
+    // bme680_read_press();
 
-    // All well
     return 1;
 }
 
@@ -282,14 +272,16 @@ bme680_read_temp()
     uint8_t buf[3];
 
     /* Start measurement by enabling forced mode. */
-    bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS | FORCED_MODE);
+    bme680_write_value(BME680_CTRL_MEAS, 0b01010101);
 
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB). */
     bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
     bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
     bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
-    
+
+    // printf("\nReading temp\n");
+    // printf("MSB %d\nLSB %d\nXLSB %d\n", buf[0], buf[1], buf[2]);
     sensor_data.current_temp = to_celsius(buf);
     return sensor_data.current_temp;
 }
