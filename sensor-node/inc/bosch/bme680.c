@@ -5,10 +5,15 @@
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
 
-#define FORCED_MODE (1 << 0)
-#define HUM_SETTINGS (1 << 0)
-#define TEMP_PRESS_SETTINGS (1 << 6) | (1 << 4) | (0 << 3) | (1 << 2)
-#define IIR_FILTER_COEFF (0 << 4) | (0 << 3) | (1 << 2)
+#define TEMP_RESOLUTION       100
+
+#define BME680_FORCED_MODE          (0 << 1) | (1 << 0)
+#define BME680_IIR_FILTER1          (0 << 4) | (0 << 3) | (1 << 2)
+#define BME680_HUM_SETTINGS         (1 << 0)
+#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
+#define BME680_READ_VAL             (BME680_TEMP_PRESS_SETTINGS | BME680_FORCED_MODE)
+
+
 
 struct bme680_data {
      uint8_t id, config;
@@ -107,18 +112,18 @@ to_pascal(uint8_t data[3])
        value, which corresponds to the current raw reading of the sensor. */
     uint16_t press_adc = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
 
-    uint16_t par_p1     = (sensor_data.press_calib_params[0] << 8) |
-                          (sensor_data.press_calib_params[1] << 0);
-    uint16_t par_p2     = (sensor_data.press_calib_params[2] << 8) |
-                          (sensor_data.press_calib_params[3] << 0);
-    uint16_t par_p4     = (sensor_data.press_calib_params[5] << 8) |
-                          (sensor_data.press_calib_params[6] << 0);
-    uint16_t par_p5     = (sensor_data.press_calib_params[7] << 8) |
-                          (sensor_data.press_calib_params[8] << 0);
-    uint16_t par_p8     = (sensor_data.press_calib_params[11] << 8) |
-                          (sensor_data.press_calib_params[12] << 0);
-    uint16_t par_p9     = (sensor_data.press_calib_params[13] << 8) |
-                          (sensor_data.press_calib_params[14] << 0);
+    uint16_t par_p1     = (sensor_data.press_calib_params[1] << 8) |
+                          (sensor_data.press_calib_params[0] << 0);
+    uint16_t par_p2     = (sensor_data.press_calib_params[3] << 8) |
+                          (sensor_data.press_calib_params[2] << 0);
+    uint16_t par_p4     = (sensor_data.press_calib_params[6] << 8) |
+                          (sensor_data.press_calib_params[5] << 0);
+    uint16_t par_p5     = (sensor_data.press_calib_params[8] << 8) |
+                          (sensor_data.press_calib_params[7] << 0);
+    uint16_t par_p8     = (sensor_data.press_calib_params[12] << 8) |
+                          (sensor_data.press_calib_params[11] << 0);
+    uint16_t par_p9     = (sensor_data.press_calib_params[14] << 8) |
+                          (sensor_data.press_calib_params[13] << 0);
     uint8_t par_p3      = sensor_data.press_calib_params[4];
     uint8_t par_p6      = sensor_data.press_calib_params[9];
     uint8_t par_p7      = sensor_data.press_calib_params[10];
@@ -172,10 +177,10 @@ to_percent(uint8_t data[2])
     corresponds to the raw reading of the humidity from the sensor */
     uint16_t hum_adc = (data[0] << 8) | (data[1] << 0);
 
-    uint16_t par_h1 = ((sensor_data.hum_calib_params[0] & 0x0F) << 8) |
-                       (sensor_data.hum_calib_params[1] << 0);
-    uint16_t par_h2 = ((sensor_data.hum_calib_params[2] & 0xF0) << 8) |
-                       (sensor_data.hum_calib_params[3] << 0);
+    uint16_t par_h1 =   (sensor_data.hum_calib_params[1] << 8) | 
+                        ((sensor_data.hum_calib_params[0] & 0x0F) << 0);
+    uint16_t par_h2 =  (sensor_data.hum_calib_params[3] << 8) |
+                       ((sensor_data.hum_calib_params[2] & 0xF0) << 0);
     uint8_t par_h3  = sensor_data.hum_calib_params[4];
     uint8_t par_h4  = sensor_data.hum_calib_params[5];
     uint8_t par_h5  = sensor_data.hum_calib_params[6];
@@ -246,19 +251,20 @@ bme680_init()
     printf("Received bme680 sensor ID: %d\n", sensor_data.id);
 
     /* Setup config paramets for sensor */
-    sensor_data.config = 0x00 | IIR_FILTER_COEFF;
+    sensor_data.config = BME680_IIR_FILTER1;
     if(bme680_write(BME680_CONFIG, &sensor_data.config, 1))
         printf("Wrote config to bme680\n");
+
+    prepare_calibration_params();
 
     /* Write configuration for the three types of functionalities */
     /* Temperature & pressure is set at the same register, i.e., 0x74 */
     /* Humidity:    1x oversampling */
     /* Temperature: 2x oversampling */
     /* Pressure:    16x oversampling */
-    bme680_write_value(BME680_CTRL_HUM, HUM_SETTINGS);
-    bme680_write_value(BME680_CTRL_MEAS, TEMP_PRESS_SETTINGS);
+    bme680_write_value(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
+    bme680_write_value(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
 
-    prepare_calibration_params();
     bme680_read_temp();
     // bme680_read_hum();
     // bme680_read_press();
@@ -272,16 +278,16 @@ bme680_read_temp()
     uint8_t buf[3];
 
     /* Start measurement by enabling forced mode. */
-    bme680_write_value(BME680_CTRL_MEAS, 0b01010101);
+    bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
 
+    puts("Reading msb, xlsb, lsb\n");
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB). */
     bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
     bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
     bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
 
-    // printf("\nReading temp\n");
-    // printf("MSB %d\nLSB %d\nXLSB %d\n", buf[0], buf[1], buf[2]);
+    printf("MSB %d\nLSB %d\nXLSB %d\n", buf[0], buf[1], buf[2]);
     sensor_data.current_temp = to_celsius(buf);
     return sensor_data.current_temp;
 }
