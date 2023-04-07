@@ -8,10 +8,8 @@
 #define BME680_FORCED_MODE          (0 << 1) | (1 << 0)
 #define BME680_IIR_FILTER1          (0 << 4) | (0 << 3) | (1 << 2)
 #define BME680_HUM_SETTINGS         (1 << 0)
-// #define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
-#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5)
+#define BME680_TEMP_PRESS_SETTINGS  (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
 #define BME680_READ_VAL             (BME680_TEMP_PRESS_SETTINGS | BME680_FORCED_MODE)
-#define BME680_GAS_WAIT_100MS_HEATUP 0b00111011
 
 
 
@@ -272,19 +270,23 @@ bme680_init()
     return 1;
 }
 
+void start_ADC_conversion() {
+    /* Start measurement by enabling forced mode. */
+    printf("Starting ADC conversion\n");
+    bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
+    printf("Finsihed ADC conversion\n");
+}
+
 int32_t
 bme680_read_temp()
 {
     uint8_t buf[3];
 
-    /* Start measurement by enabling forced mode. */
-    printf("Starting ADC conversion\n");
-    bme680_write_value(BME680_CTRL_MEAS, BME680_READ_VAL);
-    sleep_ms(1000);
-    printf("Finsihed ADC conversion\n");
-
+    start_ADC_conversion();
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB). */
+    // i2c_write_blocking(i2c_default, BME680_ADDR, 0x22, 1, true); // keep master in control
+    // i2c_read_blocking(i2c_default, BME680_ADDR, buf, 3, false);
     bme680_read(BME680_TEMP_ADC_MSB, &buf[0], 1);
     bme680_read(BME680_TEMP_ADC_LSB, &buf[1], 1);
     bme680_read(BME680_TEMP_ADC_XLSB, &buf[2], 1);
