@@ -10,8 +10,7 @@
 #define BME680_HUM_SETTINGS         (0xFF & 0x01) // (1 << 0)
 #define BME680_TEMP_PRESS_SETTINGS  (0xFF & 0x34) // (0 << 7) | (0 << 6) | (1 << 5) | (1 << 4) | (0 << 3) | (1 << 2)
 #define BME680_READ_VAL             (BME680_TEMP_PRESS_SETTINGS | BME680_FORCED_MODE)
-
-
+#define BME680_WRITE_LEN            2
 
 struct bme680_data {
     uint8_t id, config;
@@ -31,7 +30,7 @@ bme680_write(uint8_t reg, uint8_t val)
     /* A '2' is chosen here because you are always sending an array with 2
      * elements. One element as the address of where to write, and one with the
      * value. */
-    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, 2, false) != PICO_ERROR_GENERIC;
+    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, BME680_WRITE_LEN, false) != PICO_ERROR_GENERIC;
 }
 
 static uint8_t
@@ -45,7 +44,6 @@ bme680_read(uint8_t reg, uint8_t *buf, size_t len)
 
     return 1;
 }
-
 
 static void
 prepare_calibration_params() 
@@ -189,8 +187,8 @@ to_percent(uint8_t raw_data[2])
         (((temp_scaled * ((temp_scaled * (int32_t)par_h5) /
         ((int32_t)100))) >> 6) / ((int32_t)100)) + ((int32_t)(1 << 14)))) >> 10;
 
-     int32_t var3 = var1 * var2;
-     int32_t var4 = (((int32_t)par_h6 << 7) +
+    int32_t var3 = var1 * var2;
+    int32_t var4 = (((int32_t)par_h6 << 7) + 
         ((temp_scaled * (int32_t)par_h7) / ((int32_t)100))) >> 4;
 
     int32_t var5 = ((var3 >> 14) * (var3 >> 14)) >> 10;
@@ -243,11 +241,11 @@ bme680_init()
         return 0;
     }
 
-    uint8_t buf[2];
-
     /* Setup config paramets for sensor */
-    if(!bme680_write(BME680_CONFIG, BME680_IIR_FILTER1))
-        printf("ERROR: Could not write config to bme680\n");
+    if(!bme680_write(BME680_CONFIG, BME680_IIR_FILTER1)) {
+        printf("BME680_CONFIG_ERROR: Could not write config to bme680\n");
+        return 0;
+    }
 
     prepare_calibration_params();
 
@@ -256,8 +254,14 @@ bme680_init()
     /* Humidity:    1x oversampling */
     /* Temperature: 2x oversampling */
     /* Pressure:    16x oversampling */
-    bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS);
-    bme680_write(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS);
+    if(!bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS)) {
+        printf("BME680_CONFIG_ERROR: Could not write humidity settings to bme680\n");
+        return 0;
+    }
+    if (!bme680_write(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS)) {
+        printf("BME680_CONFIG_ERROR: Could not write temperature/pressure settings to bme680\n");
+        return 0;
+    }
 
     /* Intitial run to populate struct */
     bme680_read_temp();
@@ -267,46 +271,39 @@ bme680_init()
     return 1;
 }
 
-uint8_t bme680_query_data() {
-    if (bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL) == PICO_ERROR_GENERIC)
-        return 0;
-
-    return 1;
-}
-
-int32_t
+bme680_rslt_t
 bme680_read_temp()
 {
-    uint8_t buf[3];
-
     /* initiate an ADC conversion */
-    bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL);
+    if (!bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL))
+        return (bme680_rslt_t){0, 0};
 
+    uint8_t buf[3];
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB), in one go, we know that MSB (0x22) -> XLSB (0x24), so we read 3
      * bytes */
     bme680_read(BME680_TEMP_ADC_MSB, buf, 3);
 
     sensor_data.current_temp = to_celsius(buf);
-    return sensor_data.current_temp;
+    return (bme680_rslt_t){sensor_data.current_temp, 1};
 }
 
-uint16_t
+bme680_rslt_t
 bme680_read_hum()
 { 
     uint8_t buf[2];
     bme680_read(BME680_HUM_ADC_MSB, buf, 2);
 
     sensor_data.current_hum = to_percent(buf);
-    return sensor_data.current_hum;
+    return (bme680_rslt_t){sensor_data.current_hum, 1};
 }
 
-uint16_t 
+bme680_rslt_t
 bme680_read_press() 
 { 
     uint8_t buf[3];
     bme680_read(BME680_PRESS_ADC_MSB, buf, 3);
 
     sensor_data.current_press = to_pascal(buf);
-    return 0; 
+    return (bme680_rslt_t){sensor_data.current_press, 1}; 
 }

@@ -13,9 +13,9 @@
 
 // sensor readings
 struct sensor_reading {
-    uint8_t humidity;
-    uint8_t press;
-    int16_t temp_celcius;
+    bme680_rslt_t humidity;
+    bme680_rslt_t press;
+    bme680_rslt_t temp_celcius;
     // uint8_t noise;
     // uint8_t motion;
 };
@@ -24,10 +24,10 @@ void
 print_sensor_value(struct sensor_reading sensor) 
 {
     printf("=============== BME680 =================\n");
-    printf("Humidity (%%): %d\n", sensor.humidity);
-    printf("Pressure (hPa): %d\n", sensor.press);
-    printf("Temperature (C): %d.%02d\n", sensor.temp_celcius / TEMP_RESOLUTION,
-           sensor.temp_celcius % TEMP_RESOLUTION);
+    printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / 100, sensor.humidity.data % 100);
+    printf("Pressure (Pa): %d.%02d\n", sensor.press.data / 1000, sensor.press.data % 1000);
+    printf("Temperature (C): %d.%02d\n", sensor.temp_celcius.data / TEMP_RESOLUTION,
+           sensor.temp_celcius.data % TEMP_RESOLUTION);
     printf("========================================\n");
     // sensor.temp_celcius); printf("Sensor 2: %d dB noise\n", sensor.noise);
     // printf("Sensor 3: %d (cm) motion\n\n", sensor.noise);
@@ -56,20 +56,22 @@ main()
 
     /* Configure BME680 */
     while (!bme680_init()) {
-        printf("ERROR: could not connect to bme680. Trying again.\n");
+        printf("SENSORNODE_ERROR: could not connect to bme680. Trying again.\n");
         sleep_ms(DELAY_MS / 6);
     }
 
     printf("Starting readings...\n");
 
     for (;;) {
-        /* Can be more fine-grained but this checks so that the bme680
-         * sensor is connected at all to be able to fetch readings */
-        if (bme680_query_data()) {
-            sensor.temp_celcius = bme680_read_temp();
-            sensor.humidity = bme680_read_hum();
-            sensor.press = bme680_read_press();
-        }
+        /* BME680 Readings */
+        sensor.temp_celcius = bme680_read_temp();
+        if (!sensor.temp_celcius.error) printf("BME680_ERROR: Could not fetch temperature.");
+
+        sensor.humidity = bme680_read_hum();
+        if (!sensor.humidity.error) printf("BME680_ERROR: Could not fetch humidity.");
+
+        sensor.press = bme680_read_press();
+        if (!sensor.press.error) printf("BME680_ERROR: Could not fetch pressure.");
 
         print_sensor_value(sensor);
         sleep_ms(DELAY_MS);
