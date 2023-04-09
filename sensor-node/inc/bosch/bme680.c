@@ -23,26 +23,29 @@ struct bme680_data {
 /* Global variables. */
 static struct bme680_data sensor_data;
 
-static uint8_t
+static error_t
 bme680_write(uint8_t reg, uint8_t val) 
 {
     uint8_t buf[2] = {reg, val};
     /* A '2' is chosen here because you are always sending an array with 2
      * elements. One element as the address of where to write, and one with the
      * value. */
-    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, BME680_WRITE_LEN, false) != PICO_ERROR_GENERIC;
+    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, BME680_WRITE_LEN,
+                              false) == PICO_ERROR_GENERIC
+               ? WRITE_ERROR
+               : WRITE_SUCCESS;
 }
 
-static uint8_t
+static error_t
 bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
 {
     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) == PICO_ERROR_GENERIC)
-       return 0;
+       return WRITE_ERROR;
 
     if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) == PICO_ERROR_GENERIC)
-       return 0;
+       return READ_ERROR;
 
-    return 1;
+    return READ_SUCCESS;
 }
 
 static void
@@ -231,20 +234,20 @@ to_celsius(uint8_t raw_data[3])
     return ((sensor_data.t_fine * 5) + 128) >> 8;
 }
 
-uint8_t
+error_t
 bme680_init()
 {
     /* Ensure that the sensor is indeed connected and available for
      * communication. */
-    if (!bme680_read(BME680_ID, &sensor_data.id, 1)) {
+    if (bme680_read(BME680_ID, &sensor_data.id, 1) == (READ_ERROR || WRITE_ERROR)) {
         printf("ERROR: Could not receive bme680 sensor ID");
-        return 0;
+        return CONFIG_READ_ERROR;
     }
 
     /* Setup config paramets for sensor */
-    if(!bme680_write(BME680_CONFIG, BME680_IIR_FILTER1)) {
+    if(bme680_write(BME680_CONFIG, BME680_IIR_FILTER1) == WRITE_ERROR) {
         printf("BME680_CONFIG_ERROR: Could not write config to bme680\n");
-        return 0;
+        return CONFIG_WRITE_ERROR;
     }
 
     prepare_calibration_params();
@@ -254,13 +257,13 @@ bme680_init()
     /* Humidity:    1x oversampling */
     /* Temperature: 2x oversampling */
     /* Pressure:    16x oversampling */
-    if(!bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS)) {
+    if(bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS) == WRITE_ERROR) {
         printf("BME680_CONFIG_ERROR: Could not write humidity settings to bme680\n");
-        return 0;
+        return CONFIG_WRITE_ERROR;
     }
-    if (!bme680_write(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS)) {
+    if (bme680_write(BME680_CTRL_MEAS, BME680_TEMP_PRESS_SETTINGS) == WRITE_ERROR) {
         printf("BME680_CONFIG_ERROR: Could not write temperature/pressure settings to bme680\n");
-        return 0;
+        return CONFIG_WRITE_ERROR;
     }
 
     /* Intitial run to populate struct */
@@ -268,42 +271,45 @@ bme680_init()
     bme680_read_hum();
     bme680_read_press();
 
-    return 1;
+    return CONFIG_SUCCESS;
 }
 
 bme680_rslt_t
 bme680_read_temp()
 {
     /* initiate an ADC conversion */
-    if (!bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL))
-        return (bme680_rslt_t){0, 0};
+    if (bme680_write(BME680_CTRL_MEAS, BME680_READ_VAL) == WRITE_ERROR)
+        return (bme680_rslt_t){0, WRITE_ERROR};
 
     uint8_t buf[3];
     /* Read the 20-bit value of the temperature from three regs (MSB, LSB, and
      * XLSB), in one go, we know that MSB (0x22) -> XLSB (0x24), so we read 3
      * bytes */
-    bme680_read(BME680_TEMP_ADC_MSB, buf, 3);
+    if (bme680_read(BME680_TEMP_ADC_MSB, buf, 3) == READ_ERROR)
+        return (bme680_rslt_t){0, READ_ERROR};
 
     sensor_data.current_temp = to_celsius(buf);
-    return (bme680_rslt_t){sensor_data.current_temp, 1};
+    return (bme680_rslt_t){sensor_data.current_temp, READ_SUCCESS};
 }
 
 bme680_rslt_t
 bme680_read_hum()
 { 
     uint8_t buf[2];
-    bme680_read(BME680_HUM_ADC_MSB, buf, 2);
+    if (bme680_read(BME680_HUM_ADC_MSB, buf, 2) == READ_ERROR)
+        return (bme680_rslt_t){0, READ_ERROR};
 
     sensor_data.current_hum = to_percent(buf);
-    return (bme680_rslt_t){sensor_data.current_hum, 1};
+    return (bme680_rslt_t){sensor_data.current_hum, READ_SUCCESS};
 }
 
 bme680_rslt_t
 bme680_read_press() 
 { 
     uint8_t buf[3];
-    bme680_read(BME680_PRESS_ADC_MSB, buf, 3);
+    if (bme680_read(BME680_PRESS_ADC_MSB, buf, 3) == READ_ERROR)
+        return (bme680_rslt_t){0, READ_ERROR};
 
     sensor_data.current_press = to_pascal(buf);
-    return (bme680_rslt_t){sensor_data.current_press, 1}; 
+    return (bme680_rslt_t){sensor_data.current_press, READ_SUCCESS}; 
 }

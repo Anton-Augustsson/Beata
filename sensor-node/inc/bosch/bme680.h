@@ -2,11 +2,11 @@
 #define _BME680_H_
 
 #include <stdio.h>
+#include "../common.h"
 
 typedef struct bme680_rslt {
     int32_t data;
-    uint8_t error; // 1: no error
-                   // 0: error
+    error_t error; 
 } bme680_rslt_t;
 
 uint8_t bme680_init();

@@ -13,7 +13,7 @@ set(PICO_BOARD pico)
 
 ####### Bosch bme680 sensor ########
 
-add_library(bme680_lib inc/bosch/bme680_reg.h inc/bosch/bme680.h inc/bosch/bme680.c)
+add_library(bme680_lib inc/bosch/bme680_reg.h inc/bosch/bme680.h inc/bosch/bme680.c inc/common.h)
 target_link_libraries(
     bme680_lib
     pico_stdlib
