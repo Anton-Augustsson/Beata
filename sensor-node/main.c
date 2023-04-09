@@ -10,6 +10,8 @@
 #include "inc/common.h"
 
 #define TEMP_RESOLUTION 100
+#define HUM_RESOLUTION 100
+#define PRESS_RESOLUTION 1000
 #define I2C_FREQUENCY 400000
 #define SENSOR_QUERY_PERIOD_MS 3000
 #define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
@@ -27,9 +29,12 @@ void
 print_sensor_value(struct sensor_readings sensor) 
 {
     printf("=============== BME680 =================\n");
-    printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / 100, sensor.humidity.data % 100);
-    printf("Pressure (Pa): %d.%02d\n", sensor.press.data / 1000, sensor.press.data % 1000);
-    printf("Temperature (C): %d.%02d\n", sensor.temp_celsius.data / TEMP_RESOLUTION,
+    printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / HUM_RESOLUTION,
+           sensor.humidity.data % HUM_RESOLUTION);
+    printf("Pressure (hPa): %d.%02d\n", sensor.press.data / PRESS_RESOLUTION,
+           sensor.press.data % PRESS_RESOLUTION);
+    printf("Temperature (C): %d.%02d\n",
+           sensor.temp_celsius.data / TEMP_RESOLUTION,
            sensor.temp_celsius.data % TEMP_RESOLUTION);
     printf("========================================\n");
     // sensor.temp_celsius); printf("Sensor 2: %d dB noise\n", sensor.noise);
