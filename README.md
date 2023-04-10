@@ -9,7 +9,7 @@ $ rm -r build ; cmake -B build -S . ; cd build ; make
 ```
 This will generate a `.uf2` file in `sensor-node/build/src/`.
 
-If you just want to test and not upload the `.uf2` file to the pico board,
+If you just want to test the sensor node and not upload the `.uf2` file to the pico board,
 then you can use:
 ```
 $ rm -r build ; cmake -B build -S . -D BUILD_TESTS=ON ; cd build ; make
