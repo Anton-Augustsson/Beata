@@ -21,8 +21,6 @@ struct sensor_readings {
     bme680_rslt_t humidity;
     bme680_rslt_t press;
     bme680_rslt_t temp_celsius;
-    // uint8_t noise;
-    // uint8_t motion;
 };
 
 void 
@@ -37,8 +35,6 @@ print_sensor_value(struct sensor_readings sensor)
            sensor.temp_celsius.data / TEMP_RESOLUTION,
            sensor.temp_celsius.data % TEMP_RESOLUTION);
     printf("========================================\n");
-    // sensor.temp_celsius); printf("Sensor 2: %d dB noise\n", sensor.noise);
-    // printf("Sensor 3: %d (cm) motion\n\n", sensor.noise);
 }
 
 void 
@@ -62,7 +58,7 @@ main()
     struct sensor_readings sensor = {0, 0, 0};
     printf("Starting sensor-node and attempting connections\n");
 
-    while (bme680_init() != CONFIG_SUCCESS) {
+    while (bme680_init() != SUCCESS) {
         printf(
             "SENSORNODE_ERROR: could not connect to BME680. Trying again in %d "
             "ms.\n",
@@ -74,15 +70,15 @@ main()
 
     for (;;) {
         sensor.temp_celsius = bme680_read_temp();
-        if (sensor.temp_celsius.error == (READ_ERROR || WRITE_ERROR))
+        if (sensor.temp_celsius.error == ERROR)
             printf("BME680_ERROR: Could not fetch temperature.");
 
         sensor.humidity = bme680_read_hum();
-        if (sensor.humidity.error == (READ_ERROR || WRITE_ERROR))
+        if (sensor.humidity.error == ERROR)
             printf("BME680_ERROR: Could not fetch humidity.");
 
         sensor.press = bme680_read_press();
-        if (sensor.press.error == (READ_ERROR || WRITE_ERROR))
+        if (sensor.press.error == ERROR)
             printf("BME680_ERROR: Could not fetch pressure.");
 
         print_sensor_value(sensor);
