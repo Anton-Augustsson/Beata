@@ -40,9 +40,10 @@ print_sensor_value(struct sensor_readings sensor)
 void 
 init_serial_connections() 
 {
-    // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
-    // a Pico)
-    // I2C is "open drain", pull ups to keep signal high when no data is being sent
+    /* This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
+     * a Pico)
+     * I2C is "open drain", pull ups to keep signal high when no data is being
+     * sent */
     i2c_init(i2c_default, I2C_FREQUENCY);
     gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
