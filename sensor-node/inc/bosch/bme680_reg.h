@@ -2,7 +2,7 @@
 #define _BME680_REG_H_
 
 // ##############################
-// BME680 REGISTERS 
+// BME680 REGISTERS
 // ##############################
 
 #define BME680_STATUS       0x73

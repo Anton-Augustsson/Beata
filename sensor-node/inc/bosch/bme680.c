@@ -24,7 +24,7 @@ struct bme680_data {
 static struct bme680_data sensor_data;
 
 static error_t
-bme680_write(uint8_t reg, uint8_t val) 
+bme680_write(uint8_t reg, uint8_t val)
 {
     uint8_t buf[2] = {reg, val};
     /* A '2' is chosen here because you are always sending an array with 2
@@ -37,7 +37,7 @@ bme680_write(uint8_t reg, uint8_t val)
 }
 
 static error_t
-bme680_read(uint8_t reg, uint8_t *buf, size_t len) 
+bme680_read(uint8_t reg, uint8_t *buf, size_t len)
 {
     if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) ==
         PICO_ERROR_GENERIC)
@@ -51,7 +51,7 @@ bme680_read(uint8_t reg, uint8_t *buf, size_t len)
 }
 
 static void
-prepare_calibration_params() 
+prepare_calibration_params()
 {
     // Temperature
     bme680_read(BME680_TEMP_PAR_T1_LSB, &sensor_data.temp_calib_params[0], 1);
@@ -101,7 +101,7 @@ prepare_calibration_params()
  *  returns: the pressure (in pascal) given the input raw_data[16]
  */
 static int32_t
-to_pascal(uint8_t raw_data[3]) 
+to_pascal(uint8_t raw_data[3])
 {
     /* Prepare data */
     /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
@@ -141,7 +141,7 @@ to_pascal(uint8_t raw_data[3])
     press_comp = (uint32_t)((press_comp - (var2 >> 12)) * ((uint32_t)3125));
 
     if (press_comp >= (1 << 30))
-        press_comp = ((press_comp / (uint32_t)var1) << 1); 
+        press_comp = ((press_comp / (uint32_t)var1) << 1);
     else
         press_comp = ((press_comp << 1) / (uint32_t)var1);
 
@@ -169,8 +169,8 @@ to_pascal(uint8_t raw_data[3])
  *   returns: the percentage given the input raw_data[2].
  */
 static int32_t
-to_percent(uint8_t raw_data[2]) 
-{ 
+to_percent(uint8_t raw_data[2])
+{
     /* Prepare data */
     /* Concat MSB, LSB (16-bit) values into a single 16-bit value, which
      * corresponds to the raw reading of the humidity from the sensor */
@@ -190,7 +190,7 @@ to_percent(uint8_t raw_data[2])
     int32_t temp_scaled = (int32_t)sensor_data.current_temp;
     int32_t var1 = (int32_t)hum_adc - (int32_t)((int32_t)par_h1 << 4) -
                    (((temp_scaled * (int32_t)par_h3) / ((int32_t)100)) >> 1);
-    int32_t var2 = 
+    int32_t var2 =
         ((int32_t)par_h2 * (((temp_scaled *
         (int32_t)par_h4) / ((int32_t)100)) +
         (((temp_scaled * ((temp_scaled * (int32_t)par_h5) /
@@ -218,7 +218,7 @@ to_percent(uint8_t raw_data[2])
  *   returns: the temperature given the input raw_data[2] in celcius.
  */
 static int32_t
-to_celsius(uint8_t raw_data[3]) 
+to_celsius(uint8_t raw_data[3])
 {
     /* Prepare data */
     /* Concat MSB, LSB (8-bit), and XLSB (4-bit) values into a single 20-bit
@@ -309,7 +309,7 @@ bme680_read_temp()
 
 bme680_rslt_t
 bme680_read_hum()
-{ 
+{
     uint8_t buf[2];
     if (bme680_read(BME680_HUM_ADC_MSB, buf, 2) == ERROR)
         return (bme680_rslt_t){0, ERROR};
@@ -319,12 +319,12 @@ bme680_read_hum()
 }
 
 bme680_rslt_t
-bme680_read_press() 
-{ 
+bme680_read_press()
+{
     uint8_t buf[3];
     if (bme680_read(BME680_PRESS_ADC_MSB, buf, 3) == ERROR)
         return (bme680_rslt_t){0, ERROR};
 
     sensor_data.current_press = to_pascal(buf);
-    return (bme680_rslt_t){sensor_data.current_press, SUCCESS}; 
+    return (bme680_rslt_t){sensor_data.current_press, SUCCESS};
 }

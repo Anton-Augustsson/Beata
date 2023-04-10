@@ -23,8 +23,8 @@ struct sensor_readings {
     bme680_rslt_t temp_celsius;
 };
 
-void 
-print_sensor_value(struct sensor_readings sensor) 
+void
+print_sensor_value(struct sensor_readings sensor)
 {
     printf("=============== BME680 =================\n");
     printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / HUM_RESOLUTION,
@@ -37,8 +37,8 @@ print_sensor_value(struct sensor_readings sensor)
     printf("========================================\n");
 }
 
-void 
-init_serial_connections() 
+void
+init_serial_connections()
 {
     /* This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
      * a Pico)
@@ -52,7 +52,7 @@ init_serial_connections()
 }
 
 int
-main() 
+main()
 {
     stdio_init_all();
     init_serial_connections();

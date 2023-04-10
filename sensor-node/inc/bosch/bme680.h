@@ -6,7 +6,7 @@
 
 typedef struct bme680_rslt {
     int32_t data;
-    error_t error; 
+    error_t error;
 } bme680_rslt_t;
 
 uint8_t bme680_init();
