@@ -2,9 +2,9 @@
 #define _BME680_H_
 
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include "bme680_reg.h"
+#include "../common.h"
 
 #ifdef BUILD_TESTS
 #include "../../tests/mocks.h"
@@ -16,9 +16,15 @@
 #include "pico/stdlib.h"
 #endif
 
-uint8_t bme680_init();
-int32_t bme680_read_temp();
-uint16_t bme680_read_hum();
-uint16_t bme680_read_press();
+typedef struct bme680_rslt {
+    int32_t data;
+    error_t error;
+} bme680_rslt_t;
+
+
+error_t bme680_init();
+bme680_rslt_t bme680_read_temp();
+bme680_rslt_t bme680_read_hum();
+bme680_rslt_t bme680_read_press();
 
 #endif /* _BME680_H_ */

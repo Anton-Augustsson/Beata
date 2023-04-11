@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
+set(BOARD rpi_pico)
 
 function(pico_add_extra_outputs)
   # Do nothing - this is a dummy function
@@ -12,6 +13,7 @@ if(BUILD_TESTS)
 
   add_subdirectory(inc)
   add_subdirectory(tests)
+
 else()
   include(pico_sdk_import.cmake)
 

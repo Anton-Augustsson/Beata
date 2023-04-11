@@ -2,7 +2,7 @@
 #define _BME680_REG_H_
 
 // ##############################
-// BME680 REGISTERS 
+// BME680 REGISTERS
 // ##############################
 
 #define BME680_STATUS       0x73
@@ -48,8 +48,8 @@
 #define BME680_IDAC_HEAD_8  0x58
 #define BME680_IDAC_HEAD_9  0x59
 
-#define BME680_GAS_R_LSB    0x2B
 #define BME680_GAS_R_MSB    0x2A
+#define BME680_GAS_R_LSB    0x2B
 #define BME680_EAS_STATUS_0 0x1D
 
 #define BME680_TEMP_PAR_T1_LSB  0xE9
