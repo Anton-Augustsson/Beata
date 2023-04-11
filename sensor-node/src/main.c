@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 
 #include "hardware/i2c.h"
 #include "pico/time.h"
