@@ -1,20 +1,26 @@
 cmake_minimum_required(VERSION 3.13)
 
-include(pico_sdk_import.cmake)
+function(pico_add_extra_outputs)
+  # Do nothing - this is a dummy function
+endfunction()
 
-project(lab1)
 
-set(CMAKE_C_STANDARD 11)
-pico_sdk_init()
+OPTION(BUILD_TESTS "Build the test binary" OFF)
+if(BUILD_TESTS)
+  project(sensor-node)
+  set(CMAKE_C_STANDARD 11)
 
-set(PICO_BOARD pico)
+  add_subdirectory(inc)
+  add_subdirectory(tests)
+else()
+  include(pico_sdk_import.cmake)
 
-add_executable(
-    main.c
-)
+  project(sensor-node)  # project has to be after include
+  set(CMAKE_C_STANDARD 11)
 
-# pico_add_extra_outputs(lab1)
-target_link_libraries(
-    pico_stdlib
-    hardware_pwm
-)
+  pico_sdk_init()
+  set(PICO_BOARD pico)
+
+  add_subdirectory(inc)
+  add_subdirectory(src)
+endif()
