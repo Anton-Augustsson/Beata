@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "hardware/i2c.h"
 #include "pico/time.h"
@@ -6,8 +7,8 @@
 #include "pico/util/queue.h"
 #include "pico/binary_info.h"
 
-#include "inc/bosch/bme680.h"
-#include "inc/common.h"
+#include "../inc/bosch/bme680.h"
+#include "../inc/common.h"
 
 #define TEMP_RESOLUTION 100
 #define HUM_RESOLUTION 100

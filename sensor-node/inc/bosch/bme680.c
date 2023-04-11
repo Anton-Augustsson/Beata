@@ -1,9 +1,4 @@
-#include <string.h>
 #include "bme680.h"
-#include "bme680_reg.h"
-#include "hardware/i2c.h"
-#include "pico/binary_info.h"
-#include "pico/stdlib.h"
 
 #define BME680_FORCED_MODE          (0xFF & 0x01)
 #define BME680_IIR_FILTER1          (0xFF & 0x04)
