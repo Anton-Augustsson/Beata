@@ -298,6 +298,15 @@ bme680_read_temp()
     if (bme680_read(BME680_TEMP_ADC_MSB, buf, 3) == ERROR)
         return (bme680_rslt_t){0, ERROR};
 
+    printf("BME680_TEMP_PAR_T1_LSB: %d\n", sensor_data.temp_calib_params[0]);
+    printf("BME680_TEMP_PAR_T1_MSB: %d\n", sensor_data.temp_calib_params[1]);
+    printf("BME680_TEMP_PAR_T2_LSB: %d\n", sensor_data.temp_calib_params[2]);
+    printf("BME680_TEMP_PAR_T2_MSB: %d\n", sensor_data.temp_calib_params[3]);
+    printf("BME680_TEMP_PAR_T3: %d\n", sensor_data.temp_calib_params[4]);
+    printf("BME680_TEMP_ADC_MSB: %d\n", buf[0]);
+    printf("BME680_TEMP_ADC_LSB: %d\n", buf[1]);
+    printf("BME680_TEMP_ADC_XLSB: %d\n", buf[2]);
+
     sensor_data.current_temp = to_celsius(buf);
     return (bme680_rslt_t){sensor_data.current_temp, SUCCESS};
 }
