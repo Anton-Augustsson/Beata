@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "hardware/i2c.h"
+#include "hardware/adc.h"
 #include "pico/time.h"
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
@@ -28,12 +29,12 @@ print_sensor_value(struct sensor_readings sensor)
 {
     printf("=============== BME680 =================\n");
     printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / HUM_RESOLUTION,
-           sensor.humidity.data % HUM_RESOLUTION);
+	   sensor.humidity.data % HUM_RESOLUTION);
     printf("Pressure (hPa): %d.%02d\n", sensor.press.data / PRESS_RESOLUTION,
-           sensor.press.data % PRESS_RESOLUTION);
+	   sensor.press.data % PRESS_RESOLUTION);
     printf("Temperature (C): %d.%02d\n",
-           sensor.temp_celsius.data / TEMP_RESOLUTION,
-           sensor.temp_celsius.data % TEMP_RESOLUTION);
+	   sensor.temp_celsius.data / TEMP_RESOLUTION,
+	   sensor.temp_celsius.data % TEMP_RESOLUTION);
     printf("========================================\n");
 }
 
@@ -55,35 +56,38 @@ int
 main()
 {
     stdio_init_all();
+    adc_init();
+
     init_serial_connections();
+
     struct sensor_readings sensor = {0, 0, 0};
     printf("Starting sensor-node and attempting connections\n");
 
     while (bme680_init() != SUCCESS) {
-        printf(
-            "SENSORNODE_ERROR: could not connect to BME680. Trying again in %d "
-            "ms.\n",
-            INIT_RETRY_DELAY_MS);
-        sleep_ms(INIT_RETRY_DELAY_MS);
+	printf(
+	    "SENSORNODE_ERROR: could not connect to BME680. Trying again in %d "
+	    "ms.\n",
+	    INIT_RETRY_DELAY_MS);
+	sleep_ms(INIT_RETRY_DELAY_MS);
     }
 
     printf("Starting readings...\n");
 
     for (;;) {
-        sensor.temp_celsius = bme680_read_temp();
-        if (sensor.temp_celsius.error == ERROR)
-            printf("BME680_ERROR: Could not fetch temperature.");
+	sensor.temp_celsius = bme680_read_temp();
+	if (sensor.temp_celsius.error == ERROR)
+	    printf("BME680_ERROR: Could not fetch temperature.");
 
-        sensor.humidity = bme680_read_hum();
-        if (sensor.humidity.error == ERROR)
-            printf("BME680_ERROR: Could not fetch humidity.");
+	sensor.humidity = bme680_read_hum();
+	if (sensor.humidity.error == ERROR)
+	    printf("BME680_ERROR: Could not fetch humidity.");
 
-        sensor.press = bme680_read_press();
-        if (sensor.press.error == ERROR)
-            printf("BME680_ERROR: Could not fetch pressure.");
+	sensor.press = bme680_read_press();
+	if (sensor.press.error == ERROR)
+	    printf("BME680_ERROR: Could not fetch pressure.");
 
-        print_sensor_value(sensor);
-        sleep_ms(SENSOR_QUERY_PERIOD_MS);
+	print_sensor_value(sensor);
+	sleep_ms(SENSOR_QUERY_PERIOD_MS);
     }
 
     return 0;
