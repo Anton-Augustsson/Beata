@@ -8,6 +8,7 @@
 #include "pico/binary_info.h"
 
 #include "../inc/bosch/bme680.h"
+#include "../inc/motion/amn1.h"
 #include "../inc/common.h"
 
 #define TEMP_RESOLUTION 100
@@ -22,6 +23,7 @@ struct sensor_readings {
     bme680_rslt_t humidity;
     bme680_rslt_t press;
     bme680_rslt_t temp_celsius;
+    amn1_rslt_t has_motion;
 };
 
 void
@@ -35,6 +37,10 @@ print_sensor_value(struct sensor_readings sensor)
     printf("Temperature (C): %d.%02d\n",
 	   sensor.temp_celsius.data / TEMP_RESOLUTION,
 	   sensor.temp_celsius.data % TEMP_RESOLUTION);
+    printf("========================================\n");
+
+    printf("=============== AMN1 =================\n");
+    printf("Has motion (bool): %d\n", sensor.has_motion);
     printf("========================================\n");
 }
 
@@ -71,6 +77,14 @@ main()
 	sleep_ms(INIT_RETRY_DELAY_MS);
     }
 
+    while (amn1_init() != SUCCESS) {
+	printf(
+	    "SENSORNODE_ERROR: could not connect to AMN1. Trying again in %d "
+	    "ms.\n",
+	    INIT_RETRY_DELAY_MS);
+	sleep_ms(INIT_RETRY_DELAY_MS);
+    }
+
     printf("Starting readings...\n");
 
     for (;;) {
@@ -85,6 +99,10 @@ main()
 	sensor.press = bme680_read_press();
 	if (sensor.press.error == ERROR)
 	    printf("BME680_ERROR: Could not fetch pressure.");
+
+	sensor.has_motion = amn1_has_motion();
+	if (sensor.has_motion.error == ERROR)
+	    printf("AMN1_ERROR: Could not check for motion.");
 
 	print_sensor_value(sensor);
 	sleep_ms(SENSOR_QUERY_PERIOD_MS);
