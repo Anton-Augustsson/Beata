@@ -4,6 +4,8 @@ add_library(
     "${CMAKE_CURRENT_SOURCE_DIR}/bosch/bme680.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/motion/amn1.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/motion/amn1.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sound/dfr0034.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sound/dfr0034.c"
 )
 
 target_include_directories(inc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -9,6 +9,7 @@
 
 #include "../inc/bosch/bme680.h"
 #include "../inc/motion/amn1.h"
+#include "../inc/sound/dfr0034.h"
 #include "../inc/common.h"
 
 #define TEMP_RESOLUTION 100
@@ -24,12 +25,13 @@ struct sensor_readings {
     bme680_rslt_t press;
     bme680_rslt_t temp_celsius;
     amn1_rslt_t has_motion;
+    dfr0034_rslt_t sound_level;
 };
 
 void
 print_sensor_value(struct sensor_readings sensor)
 {
-    printf("=============== BME680 =================\n");
+    printf("============ SENSOR READINGS ==============\n");
     printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / HUM_RESOLUTION,
 	   sensor.humidity.data % HUM_RESOLUTION);
     printf("Pressure (hPa): %d.%02d\n", sensor.press.data / PRESS_RESOLUTION,
@@ -37,11 +39,9 @@ print_sensor_value(struct sensor_readings sensor)
     printf("Temperature (C): %d.%02d\n",
 	   sensor.temp_celsius.data / TEMP_RESOLUTION,
 	   sensor.temp_celsius.data % TEMP_RESOLUTION);
-    printf("========================================\n");
-
-    printf("=============== AMN1 =================\n");
-    printf("Has motion (bool): %d\n", sensor.has_motion);
-    printf("========================================\n");
+    printf("Has motion (bool): %d\n", sensor.has_motion.data);
+    printf("Sound level: %d\n", sensor.sound_level.data);
+    printf("===========================================\n\n");
 }
 
 void
@@ -79,7 +79,15 @@ main()
 
     while (amn1_init() != SUCCESS) {
 	printf(
-	    "SENSORNODE_ERROR: could not connect to AMN1. Trying again in %d "
+	    "SENSORNODE_ERROR: could not setup AMN1. Trying again in %d "
+	    "ms.\n",
+	    INIT_RETRY_DELAY_MS);
+	sleep_ms(INIT_RETRY_DELAY_MS);
+    }
+
+    while (dfr0034_init() != SUCCESS) {
+	printf(
+	    "SENSORNODE_ERROR: could not setup DFR0034. Trying again in %d "
 	    "ms.\n",
 	    INIT_RETRY_DELAY_MS);
 	sleep_ms(INIT_RETRY_DELAY_MS);
@@ -103,6 +111,10 @@ main()
 	sensor.has_motion = amn1_has_motion();
 	if (sensor.has_motion.error == ERROR)
 	    printf("AMN1_ERROR: Could not check for motion.");
+
+	sensor.sound_level = dfr0034_sound_level();
+	if (sensor.sound_level.error == ERROR)
+	    printf("DFR0034_ERROR: Could not check sound level.");
 
 	print_sensor_value(sensor);
 	sleep_ms(SENSOR_QUERY_PERIOD_MS);
