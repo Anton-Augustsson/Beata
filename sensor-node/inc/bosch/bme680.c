@@ -309,18 +309,6 @@ bme680_read_hum()
     if (bme680_read(BME680_HUM_ADC_MSB, buf, 2) == ERROR)
         return (bme680_rslt_t){0, ERROR};
 
-    printf("BME680_HUM_PAR_H1_LSB: %d\n", sensor_data.hum_calib_params[0]);
-    printf("BME680_HUM_PAR_H1_MSB: %d\n", sensor_data.hum_calib_params[1]);
-    printf("BME680_HUM_PAR_H2_LSB: %d\n", sensor_data.hum_calib_params[2]);
-    printf("BME680_HUM_PAR_H2_MSB: %d\n", sensor_data.hum_calib_params[3]);
-    printf("BME680_HUM_PAR_H3: %d\n", sensor_data.hum_calib_params[4]);
-    printf("BME680_HUM_PAR_H4: %d\n", sensor_data.hum_calib_params[5]);
-    printf("BME680_HUM_PAR_H5: %d\n", sensor_data.hum_calib_params[6]);
-    printf("BME680_HUM_PAR_H6: %d\n", sensor_data.hum_calib_params[7]);
-    printf("BME680_HUM_PAR_H7: %d\n", sensor_data.hum_calib_params[8]);
-    printf("vME680_HUM_ADC_MSB: %d\n", buf[0]);
-    printf("vME680_HUM_ADC_LSB: %d\n", buf[1]);
-
     sensor_data.current_hum = to_percent(buf);
     return (bme680_rslt_t){sensor_data.current_hum, SUCCESS};
 }
@@ -331,26 +319,6 @@ bme680_read_press()
     uint8_t buf[3];
     if (bme680_read(BME680_PRESS_ADC_MSB, buf, 3) == ERROR)
         return (bme680_rslt_t){0, ERROR};
-
-    printf("BME680_PRESS_PAR_P1_LSB: %d\n", sensor_data.press_calib_params[0]);
-    printf("BME680_PRESS_PAR_P1_MSB: %d\n", sensor_data.press_calib_params[1]);
-    printf("BME680_PRESS_PAR_P2_LSB: %d\n", sensor_data.press_calib_params[2]);
-    printf("BME680_PRESS_PAR_P2_MSB: %d\n", sensor_data.press_calib_params[3]);
-    printf("BME680_PRESS_PAR_P3: %d\n", sensor_data.press_calib_params[4]);
-    printf("BME680_PRESS_PAR_P4_LSB: %d\n", sensor_data.press_calib_params[5]);
-    printf("BME680_PRESS_PAR_P4_MSB: %d\n", sensor_data.press_calib_params[6]);
-    printf("BME680_PRESS_PAR_P5_LSB: %d\n", sensor_data.press_calib_params[7]);
-    printf("BME680_PRESS_PAR_P5_MSB: %d\n", sensor_data.press_calib_params[8]);
-    printf("BME680_PRESS_PAR_P6: %d\n", sensor_data.press_calib_params[9]);
-    printf("BME680_PRESS_PAR_P7: %d\n", sensor_data.press_calib_params[10]);
-    printf("BME680_PRESS_PAR_P8_LSB: %d\n", sensor_data.press_calib_params[11]);
-    printf("BME680_PRESS_PAR_P8_MSB: %d\n", sensor_data.press_calib_params[12]);
-    printf("BME680_PRESS_PAR_P9_LSB: %d\n", sensor_data.press_calib_params[13]);
-    printf("BME680_PRESS_PAR_P9_MSB: %d\n", sensor_data.press_calib_params[14]);
-    printf("BME680_PRESS_PAR_P10: %d\n", sensor_data.press_calib_params[15]);
-    printf("BME680_PRESS_ADC_MSB: %d\n", buf[0]);
-    printf("BME680_PRESS_ADC_XLSB: %d\n", buf[1]);
-    printf("BME680_PRESS_ADC_LSB: %d\n", buf[2]);
 
     sensor_data.current_press = to_pascal(buf);
     return (bme680_rslt_t){sensor_data.current_press, SUCCESS};
