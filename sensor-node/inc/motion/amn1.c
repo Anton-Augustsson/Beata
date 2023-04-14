@@ -1,9 +1,6 @@
 #include "amn1.h"
 
-/* TODO: Set correct pin. */
 #define AMN1_GPIO_PIN 26
-
-/* GPIO [26..29] maps to ADC channel [0..3], respectively */
 #define AMN1_ADC_CHANNEL 0
 
 #define AMN1_STABILITY_TIME_MS 30 * 1000
@@ -34,7 +31,6 @@ amn1_read_motion()
 	if (!circuit_stable)
 		return (amn1_rslt_t){.error = NOT_READY};
 
-	/* TODO: Use the ADC FIFO queue? */
 	adc_select_input(AMN1_ADC_CHANNEL);
 	uint16_t value = adc_read();
 

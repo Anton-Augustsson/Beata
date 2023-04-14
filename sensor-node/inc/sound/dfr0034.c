@@ -29,7 +29,6 @@ dfr0034_read_sound()
 	if (!circuit_stable)
 		return (dfr0034_rslt_t){.error = NOT_READY};
 
-	/* TODO: Use the ADC FIFO queue? */
 	adc_select_input(DFR0034_ADC_CHANNEL);
 	uint16_t value = adc_read();
 
