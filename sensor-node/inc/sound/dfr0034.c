@@ -24,7 +24,7 @@ dfr0034_init()
 }
 
 dfr0034_rslt_t
-dfr0034_sound_level()
+dfr0034_read_sound()
 {
 	if (!circuit_stable)
 		return (dfr0034_rslt_t){.error = NOT_READY};

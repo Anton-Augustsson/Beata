@@ -108,11 +108,11 @@ main()
 	if (sensor.press.error == ERROR)
 	    printf("BME680_ERROR: Could not fetch pressure.");
 
-	sensor.has_motion = amn1_has_motion();
+	sensor.has_motion = amn1_read_motion();
 	if (sensor.has_motion.error == ERROR)
 	    printf("AMN1_ERROR: Could not check for motion.");
 
-	sensor.sound_level = dfr0034_sound_level();
+	sensor.sound_level = dfr0034_read_sound();
 	if (sensor.sound_level.error == ERROR)
 	    printf("DFR0034_ERROR: Could not check sound level.");
 

@@ -13,18 +13,12 @@
 #include "hardware/gpio.h"
 #endif
 
-/* TODO: Set correct pin. */
-#define AMN1_GPIO_PIN 26
-
-/* GPIO [26..29] maps to ADC channel [0..3], respectively */
-#define AMN1_ADC_CHANNEL 0
-
 typedef struct amn1_rslt {
     bool data;
     error_t error;
 } amn1_rslt_t;
 
 error_t amn1_init();
-amn1_rslt_t amn1_has_motion();
+amn1_rslt_t amn1_read_motion();
 
 #endif /* _AMN1_H_ */

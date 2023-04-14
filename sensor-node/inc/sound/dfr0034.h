@@ -19,6 +19,6 @@ typedef struct dfr0034_rslt {
 } dfr0034_rslt_t;
 
 error_t dfr0034_init();
-dfr0034_rslt_t dfr0034_sound_level();
+dfr0034_rslt_t dfr0034_read_sound();
 
 #endif /* _DFR0034_H_ */

@@ -29,7 +29,7 @@ amn1_init()
 }
 
 amn1_rslt_t
-amn1_has_motion()
+amn1_read_motion()
 {
 	if (!circuit_stable)
 		return (amn1_rslt_t){.error = NOT_READY};
