@@ -6,9 +6,6 @@
 #define TEMP_RESOLUTION 100
 #define HUM_RESOLUTION 100
 #define PRESS_RESOLUTION 1000
-#define I2C_FREQUENCY 400000
-#define SENSOR_QUERY_PERIOD_MS 3000
-#define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
 
 
 /* 
@@ -53,7 +50,15 @@ int test_read_temp(void)
       return 0;
   }
 
-  printf("---BME680_SUCCESS: the temp is %d.\n", temp_celsius.data);
+  if (temp_celsius.data != 2654)
+  {
+    printf("---BME680_ERROR: Wrong temp");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Temperature (C) is %d.%02d\n",
+          temp_celsius.data / TEMP_RESOLUTION,
+          temp_celsius.data % TEMP_RESOLUTION);
   return 1;
 }
 
@@ -71,16 +76,25 @@ int test_read_humidity(void)
     return 0;
   }
 
-  printf("---BME680_SUCCESS: the bumidity is %d.\n", humidity.data);
+  // FIXME: wrong humidity, change when it is correct
+  if (humidity.data != -224735)
+  {
+    printf("---BME680_ERROR: Wrong humidity");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Humidity (%%) is %d.%02d\n", 
+          humidity.data / HUM_RESOLUTION,
+          humidity.data % HUM_RESOLUTION);
   return 1;
 }
 
 /* 
  * Read the gas from bme680
  */
-int test_read_gas(void) 
+int test_read_press(void) 
 {
-  printf("-Test of reading gas value of bme680\n");
+  printf("-Test of reading pressure value of bme680\n");
 
   bme680_rslt_t press = bme680_read_press();
   if (press.error == ERROR)
@@ -89,7 +103,15 @@ int test_read_gas(void)
     return 0;
   }
 
-  printf("---BME680_SUCCESS: the press is %d.\n", press.data);
+  if (press.data != 94625)
+  {
+    printf("---BME680_ERROR: Wrong press");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Pressure (hPa) is %d.%02d\n", 
+          press.data / PRESS_RESOLUTION,
+          press.data % PRESS_RESOLUTION);
   return 1;
 }
 

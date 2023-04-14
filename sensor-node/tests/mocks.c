@@ -1,7 +1,44 @@
 #include "mocks.h"
 #include "../inc/bosch/bme680_reg.h"
 
-int reg_read;
+int reg_read = -1;
+
+int set_buf_3(uint8_t *buf, size_t len, uint8_t value1, uint8_t value2, uint8_t value3)
+{
+    if (len == 3) 
+    {
+        buf[0] = value1;
+        buf[1] = value2;
+        buf[2] = value3;
+        reg_read = -1;
+        return 1;
+    }
+
+    return -1;
+}
+int set_buf_2(uint8_t *buf, size_t len, uint8_t value1, uint8_t value2)
+{
+    if (len == 2) 
+    {
+        buf[0] = value1;
+        buf[1] = value2;
+        reg_read = -1;
+        return 1;
+    }
+
+    return -1;
+}
+int set_buf_1(uint8_t *buf, size_t len, uint8_t value1)
+{
+    if (len == 1) 
+    {
+        buf[0] = value1;
+        reg_read = -1;
+        return 1;
+    }
+
+    return -1;
+}
 
 int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option)
 {
@@ -13,123 +50,73 @@ int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
 {
     switch(reg_read){    
         case BME680_TEMP_PAR_T1_LSB:    
-            buf[0] = 243;
-            break;
+            return set_buf_1(buf, len, 243);
         case BME680_TEMP_PAR_T1_MSB:    
-            buf[0] = 101;
-            break;
+            return set_buf_1(buf, len, 101);
         case BME680_TEMP_PAR_T2_LSB:    
-            buf[0] = 85;
-            break;
+            return set_buf_1(buf, len, 85);
         case BME680_TEMP_PAR_T2_MSB:    
-            buf[0] = 103;
-            break;
+            return set_buf_1(buf, len, 103);
         case BME680_TEMP_PAR_T3: 
-            buf[0] = 3;
-            break;
+            return set_buf_1(buf, len, 3);
         case BME680_TEMP_ADC_MSB: 
-            if (len != 3)
-                break;
-            buf[0] = 122;
-            buf[1] = 125;
-            buf[2] = 144;
-            break;
-        case BME680_HUM_PAR_H1_LSB || BME680_HUM_PAR_H2_LSB:
-            buf[0] = 55;
-            break;
+            return set_buf_3(buf, len, 122, 125, 144);
+        case BME680_HUM_PAR_H1_LSB: // same as BME680_HUM_PAR_H2_LSB
+            return set_buf_1(buf, len, 55);
         case BME680_HUM_PAR_H1_MSB:
-            buf[0] = 67;
-            break;
+            return set_buf_1(buf, len, 67);
         case BME680_HUM_PAR_H2_MSB:
-            buf[0] = 59;
-            break;
+            return set_buf_1(buf, len, 59);
         case BME680_HUM_PAR_H3:
-            buf[0] = 0;
-            break;
+            return set_buf_1(buf, len, 0);
         case BME680_HUM_PAR_H4:
-            buf[0] = 45;
-            break;
+            return set_buf_1(buf, len, 45);
         case BME680_HUM_PAR_H5:
-            buf[0] = 20;
-            break;
+            return set_buf_1(buf, len, 20);
         case BME680_HUM_PAR_H6:
-            buf[0] = 120;
-            break;
+            return set_buf_1(buf, len, 120);
         case BME680_HUM_PAR_H7:
-            buf[0] = 156;
-            break;
+            return set_buf_1(buf, len, 156);
         case BME680_HUM_ADC_MSB:
-            if (len != 2)
-                break;
-            buf[0] = 92;
-            buf[1] = 213;
-            break;
+            return set_buf_2(buf, len, 92, 213);
         case BME680_PRESS_PAR_P1_LSB:
-            buf[0] = 244;
-            break;
+            return set_buf_1(buf, len, 244);
         case BME680_PRESS_PAR_P1_MSB:
-            buf[0] = 143;
-            break;
+            return set_buf_1(buf, len, 143);
         case BME680_PRESS_PAR_P2_LSB:
-            buf[0] = 217;
-            break;
+            return set_buf_1(buf, len, 217);
         case BME680_PRESS_PAR_P2_MSB:
-            buf[0] = 215;
-            break;
+            return set_buf_1(buf, len, 215);
         case BME680_PRESS_PAR_P3:
-            buf[0] = 88;
-            break;
+            return set_buf_1(buf, len, 88);
         case BME680_PRESS_PAR_P4_LSB:
-            buf[0] = 6;
-            break;
+            return set_buf_1(buf, len, 6);
         case BME680_PRESS_PAR_P4_MSB:
-            buf[0] = 43;
-            break;
+            return set_buf_1(buf, len, 43);
         case BME680_PRESS_PAR_P5_LSB:
-            buf[0] = 215;
-            break;
+            return set_buf_1(buf, len, 215);
         case BME680_PRESS_PAR_P5_MSB:
-            buf[0] = 254;
-            break;
+            return set_buf_1(buf, len, 254);
         case BME680_PRESS_PAR_P6:
-            buf[0] = 30;
-            break;
+            return set_buf_1(buf, len, 30);
         case BME680_PRESS_PAR_P7:
-            buf[0] = 48;
-            break;
+            return set_buf_1(buf, len, 48);
         case BME680_PRESS_PAR_P8_LSB:
-            buf[0] = 132;
-            break;
+            return set_buf_1(buf, len, 132);
         case BME680_PRESS_PAR_P8_MSB:
-            buf[0] = 242;
-            break;
+            return set_buf_1(buf, len, 242);
         case BME680_PRESS_PAR_P9_LSB:
-            buf[0] = 37;
-            break;
+            return set_buf_1(buf, len, 37);
         case BME680_PRESS_PAR_P9_MSB:
-            buf[0] = 247;
-            break;
+            return set_buf_1(buf, len, 247);
         case BME680_PRESS_PAR_P10:
-            buf[0] = 30;
-            break;
+            return set_buf_1(buf, len, 30);
         case BME680_PRESS_ADC_MSB:
-            if (len != 3)
-                break;
-            buf[0] = 65;
-            buf[1] = 154;
-            buf[2] = 224;
-            break;
-        default:
-            for (int i = 0; i < len; i++)
-            {
-               buf[i] = 1;
-            }
-            break;
+            return set_buf_3(buf, len, 65, 154, 224);
+        case BME680_ID:
+            return set_buf_1(buf, len, 1);
+        default: // will go to default if reg_read == -1 
+            printf("ERROR: Reading a unknown register (%d).\n", reg_read);
+            return -1;
     }
-
-
-    // Need to write dummy value to buf
-    // Should probably be able to change what value we will use like have 
-    // A global varible that can be changed by the test function
-    return 1;
 }

@@ -16,7 +16,7 @@ int main()
   
   succeeded += test_read_temp();  tests++;
   succeeded += test_read_humidity();  tests++;
-  succeeded += test_read_gas();  tests++;
+  succeeded += test_read_press();  tests++;
 
   printf("Succeeded: %d/%d\n", succeeded, tests);
 

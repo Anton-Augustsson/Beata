@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #define PICO_ERROR_GENERIC  -1
 #define PICO_DEFAULT_I2C_SDA_PIN  1
