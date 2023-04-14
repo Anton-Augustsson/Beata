@@ -45,30 +45,8 @@ print_sensor_value(struct sensor_readings sensor)
 }
 
 void
-init_serial_connections()
+init_sensors()
 {
-    /* This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
-     * a Pico)
-     * I2C is "open drain", pull ups to keep signal high when no data is being
-     * sent */
-    i2c_init(i2c_default, I2C_FREQUENCY);
-    gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-    gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
-}
-
-int
-main()
-{
-    stdio_init_all();
-    adc_init();
-
-    init_serial_connections();
-
-    struct sensor_readings sensor = {0, 0, 0};
-    printf("Starting sensor-node and attempting connections\n");
-
     while (bme680_init() != SUCCESS) {
 	printf(
 	    "SENSORNODE_ERROR: could not connect to BME680. Trying again in %d "
@@ -92,9 +70,35 @@ main()
 	    INIT_RETRY_DELAY_MS);
 	sleep_ms(INIT_RETRY_DELAY_MS);
     }
+}
+
+void
+init_serial_connections()
+{
+    /* This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
+     * a Pico)
+     * I2C is "open drain", pull ups to keep signal high when no data is being
+     * sent */
+    i2c_init(i2c_default, I2C_FREQUENCY);
+    gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
+    gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+}
+
+int
+main()
+{
+    struct sensor_readings sensor = {0, 0, 0};
+
+    stdio_init_all();
+    adc_init();
+
+    printf("Starting sensor-node and attempting connections\n");
+    init_serial_connections();
+    init_sensors();
 
     printf("Starting readings...\n");
-
     for (;;) {
 	sensor.temp_celsius = bme680_read_temp();
 	if (sensor.temp_celsius.error == ERROR)
