@@ -50,7 +50,7 @@ int test_read_motion(void)
         return 0;
     }
 
-    printf("Has motion (bool): %d\n", motion.data);
+    printf("---AMN1_SUCCESS: Has motion (bool): %d\n", motion.data);
     return 1;
 }
 

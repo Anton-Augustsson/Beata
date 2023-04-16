@@ -11,9 +11,9 @@
 int init_suite_dfr0034(void) 
 {
   printf("Init test suite dfr0034\n");
-  //if (bme680_init() != SUCCESS) {
-  //      printf("SENSORNODE_ERROR: could not connect to BME680.");
-  //}
+  if (dfr0034_init() != SUCCESS) {
+        printf("SENSORNODE_ERROR: could not connect to BME680.");
+  }
 
   return 0;
 }
@@ -36,23 +36,21 @@ int clean_suite_dfr0034(void)
  */
 int test_read_sound(void) 
 {
-  //printf("-Test of reading temperature value of bme680\n");
-  //bme680_rslt_t temp_celsius = bme680_read_temp();
-  //if (temp_celsius.error == ERROR)
-  //{
-  //    printf("---BME680_ERROR: Could not fetch temperature.");
-  //    return 0;
-  //}
+  printf("-Test for reading sound level of dfr0034\n");
+  dfr0034_rslt_t sound = dfr0034_read_sound();
+  if (sound.error == ERROR)
+  {
+      printf("---DFE0034_ERROR: Could not fetch sound level.");
+      return 0;
+  }
 
-  //if (temp_celsius.data != 2654)
-  //{
-  //  printf("---BME680_ERROR: Wrong temp");
-  //  return 0;
-  //}
+  if (sound.data != 100)
+  {
+    printf("---DFE0034_ERROR: Wrong sound level (expected 100 but got %d)", sound.data);
+    return 0;
+  }
 
-  //printf("---BME680_SUCCESS: Temperature (C) is %d.%02d\n",
-  //        temp_celsius.data / TEMP_RESOLUTION,
-  //        temp_celsius.data % TEMP_RESOLUTION);
+  printf("---DFE0034_SUCCESS: Sound level: %d\n", sound.data);
   return 1;
 }
 
