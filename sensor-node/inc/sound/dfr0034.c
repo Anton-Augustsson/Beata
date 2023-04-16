@@ -1,7 +1,6 @@
 #include "dfr0034.h"
 
 #define DFR0034_GPIO_PIN 27
-#define DFR0034_ADC_CHANNEL 1
 #define DFR0034_STABILITY_TIME_MS 30 * 1000
 
 static volatile bool circuit_stable = false;

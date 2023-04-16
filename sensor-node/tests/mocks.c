@@ -1,5 +1,6 @@
 #include "mocks.h"
 #include "../inc/bosch/bme680_reg.h"
+#include "../inc/common.h"
 
 int reg_read = -1;
 
@@ -118,5 +119,55 @@ int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
         default: // will go to default if reg_read == -1 
             printf("ERROR: Reading a unknown register (%d).\n", reg_read);
             return -1;
+    }
+}
+
+
+int adc_gpio_init(int gpio_pin)
+{
+    return 1;
+}
+
+int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*), uint8_t *null_value, bool option)
+{
+    callback(1, NULL);
+    return 1;
+}
+
+int channel = -1;
+int adc_select_input(int adc_channel)
+{
+    switch (adc_channel)
+    {
+    case AMN1_ADC_CHANNEL:
+        channel = AMN1_ADC_CHANNEL;
+        return 1;
+    
+    case DFR0034_ADC_CHANNEL:
+        channel = DFR0034_ADC_CHANNEL;
+        return 1;
+
+    default:
+        printf("ERROR: unknown adc channel (%d).\n", adc_channel);
+        return -1;
+    }
+}
+
+uint16_t adc_read()
+{
+    switch (channel)
+    {
+    case AMN1_ADC_CHANNEL:
+        channel = -1;
+        return 4/ADC_CONVERSION_FACTOR;
+    
+    case DFR0034_ADC_CHANNEL:
+        channel = -1;
+        return 100;
+
+    default:
+        printf("ERROR: reading a unknown adc channel (%d).\n", channel);
+        channel = -1;
+        return 0;
     }
 }
