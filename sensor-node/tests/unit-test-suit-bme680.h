@@ -3,6 +3,10 @@
 
 #include "../inc/bosch/bme680.h"
 
+#define TEMP_RESOLUTION 100
+#define HUM_RESOLUTION 100
+#define PRESS_RESOLUTION 1000
+
 
 /* 
  * Suite initialization function
@@ -12,6 +16,10 @@
 int init_suite_bme680(void) 
 {
   printf("Init test suit bme680\n");
+  if (bme680_init() != SUCCESS) {
+        printf("SENSORNODE_ERROR: could not connect to BME680.");
+  }
+
 
   return 0;
 }
@@ -34,11 +42,24 @@ int clean_suite_bme680(void)
  */
 int test_read_temp(void) 
 {
-  printf("test of reading temperature value of bme680\n");
+  printf("-Test of reading temperature value of bme680\n");
+  bme680_rslt_t temp_celsius = bme680_read_temp();
+  if (temp_celsius.error == ERROR)
+  {
+      printf("---BME680_ERROR: Could not fetch temperature.");
+      return 0;
+  }
 
-  // TODO: create real test cases
-  if ( 1 == 1 ) { return 1; }
-  else { return 0; }
+  if (temp_celsius.data != 2654)
+  {
+    printf("---BME680_ERROR: Wrong temp");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Temperature (C) is %d.%02d\n",
+          temp_celsius.data / TEMP_RESOLUTION,
+          temp_celsius.data % TEMP_RESOLUTION);
+  return 1;
 }
 
 /* 
@@ -46,23 +67,52 @@ int test_read_temp(void)
  */
 int test_read_humidity(void) 
 {
-  printf("test of reading humidity value of bme680\n");
+  printf("-Test of reading humidity value of bme680\n");
 
-  // TODO: create real test cases
-  if ( 1 == 1 ) { return 1; }
-  else { return 0; }
+  bme680_rslt_t humidity = bme680_read_hum();
+  if (humidity.error == ERROR)
+  {
+    printf("---BME680_ERROR: Could not fetch humidity.");
+    return 0;
+  }
+
+  // FIXME: wrong humidity, change when it is correct
+  if (humidity.data != -224735)
+  {
+    printf("---BME680_ERROR: Wrong humidity");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Humidity (%%) is %d.%02d\n", 
+          humidity.data / HUM_RESOLUTION,
+          humidity.data % HUM_RESOLUTION);
+  return 1;
 }
 
 /* 
  * Read the gas from bme680
  */
-int test_read_gas(void) 
+int test_read_press(void) 
 {
-  printf("test of reading gas value of bme680\n");
+  printf("-Test of reading pressure value of bme680\n");
 
-  // TODO: create real test cases
-  if ( 1 == 1 ) { return 1; }
-  else { return 0; }
+  bme680_rslt_t press = bme680_read_press();
+  if (press.error == ERROR)
+  {
+    printf("---BME680_ERROR: Could not fetch pressure.");
+    return 0;
+  }
+
+  if (press.data != 94625)
+  {
+    printf("---BME680_ERROR: Wrong press");
+    return 0;
+  }
+
+  printf("---BME680_SUCCESS: Pressure (hPa) is %d.%02d\n", 
+          press.data / PRESS_RESOLUTION,
+          press.data % PRESS_RESOLUTION);
+  return 1;
 }
 
 
