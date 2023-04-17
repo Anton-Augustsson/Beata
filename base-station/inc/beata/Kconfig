@@ -1,0 +1,29 @@
+menuconfig BEATA
+	bool "Beata sensor node"
+	default y
+	depends on DT_HAS_BEATA_ENABLED
+	help
+	  Enable driver for Beata sensor nodes that allow you to receive sensor value from it.
+
+if BEATA
+
+# TODO: Add choices for all configuration settings on our sensor node
+#choice
+#	prompt "BME680 temperature oversampling"
+#	default BME680_TEMP_OVER_2X
+#	help
+#	  Select temperature oversampling for the BME680 sensor.  Higher values
+#	  lead to more accurate readings, but higher power consumption.
+#config BME680_TEMP_OVER_1X
+#	bool "x1"
+#config BME680_TEMP_OVER_2X
+#	bool "x2"
+#config BME680_TEMP_OVER_4X
+#	bool "x4"
+#config BME680_TEMP_OVER_8X
+#	bool "x8"
+#config BME680_TEMP_OVER_16X
+#	bool "x16"
+#endchoice
+
+endif # BEATA
