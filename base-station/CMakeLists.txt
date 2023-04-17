@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 # Select our board
 set(BOARD rpi_pico)
-set(ZEPHYR_EXTRA_MODULES ../beata-driver)
+set(ZEPHYR_EXTRA_MODULES ${CMAKE_CURRENT_SOURCE_DIR}/../beata-driver)
 
 # Find/Select cmake package 'Zephyr'
 find_package(Zephyr)
