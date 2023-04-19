@@ -6,13 +6,13 @@
 #define AMN1_STABILITY_TIME_MS 30 * 1000
 #define AMN1_MOTION_THRESHOLD_V 3
 
-static volatile bool circuit_stable = false;
+static volatile uint8_t circuit_stable = 0;
 
 static int64_t
 circuit_stable_callback(alarm_id_t id, void *user_data)
 {
 	printf("AMN1: Circuit is now stable\n");
-	circuit_stable = true;
+	circuit_stable = 1;
 	/* Do not re-run alarm. */
 	return 0;
 }

@@ -2,7 +2,6 @@
 #define _DFR0034_H_
 
 #include <stdio.h>
-#include <stdbool.h>
 #include "../common.h"
 
 #ifdef BUILD_TESTS
