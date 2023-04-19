@@ -3,6 +3,7 @@
 #include "../inc/common.h"
 
 int reg_read = -1;
+int channel = -1;
 
 int set_buf_3(uint8_t *buf, size_t len, uint8_t value1, uint8_t value2, uint8_t value3)
 {
@@ -134,7 +135,6 @@ int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*
     return 1;
 }
 
-int channel = -1;
 int adc_select_input(int adc_channel)
 {
     switch (adc_channel)
