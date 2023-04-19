@@ -5,12 +5,27 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 
 #define BEATA_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#define DT_DRV_COMPAT beata
+
+/* data registers */
+#define SENSOR_NODE_TEMP    0x00
+#define SENSOR_NODE_HUM     0x04
+#define SENSOR_NODE_PRESS   0x08
+#define SENSOR_NODE_SOUND   0x0C
+#define SENSOR_NODE_MOTION  0x0E
+#define SENSOR_NODE_CONFIG  0x0F
 
 typedef int (*beata_bus_check_fn)(const struct i2c_dt_spec *i2c);
 typedef int (*beata_reg_read_fn)(const struct device *dev, uint8_t start, uint8_t *buf, int size);
 typedef int (*beata_reg_write_fn)(const struct device *dev, uint8_t start, uint8_t val);
+
+/* Additional sensor channel(s) */
+enum beata_channel {
+	SENSOR_CHAN_SOUND = SENSOR_CHAN_PRIV_START,
+};
 
 struct beata_bus_io
 {
@@ -24,8 +39,6 @@ struct beata_config
 	struct i2c_dt_spec i2c;
 	const struct beata_bus_io *bus_io;
 };
-
-/* TODO: Add register defs for our protocol */
 
 struct beata_data
 {

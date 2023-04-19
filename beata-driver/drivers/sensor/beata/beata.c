@@ -42,11 +42,8 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
         case SENSOR_CHAN_IR:
             //TODO:
             break;
-        case SENSOR_CHAN_SOUND:
+        case SENSOR_CHAN_PROX:
             //TODO:
-            break;
-        case SENSOR_CHAN_ALL:
-            // TODO:
             break;
         default:
             return -EINVAL;
