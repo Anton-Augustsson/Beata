@@ -1,0 +1,6 @@
+&i2c0 {
+    beata: beata@17 {
+	    compatible = "beata";
+	    reg = <0x17>;
+    };
+};
