@@ -1,5 +1,14 @@
 #include "bme680.h"
 
+/* Use I2C0, since I2C1 is reserved for base station communication. */
+#define I2C_BAUDRATE 400000
+#define I2C_SDA_PIN 20
+#define I2C_SCL_PIN 21
+
+#define TEMP_RESOLUTION 100
+#define HUM_RESOLUTION 1000
+#define PRESS_RESOLUTION 1000
+
 #define BME680_FORCED_MODE          (0xFF & 0x01)
 #define BME680_IIR_FILTER1          (0xFF & 0x04)
 #define BME680_HUM_SETTINGS         (0xFF & 0x01)
@@ -25,8 +34,8 @@ bme680_write(uint8_t reg, uint8_t val)
     /* A '2' is chosen here because you are always sending an array with 2
      * elements. One element as the address of where to write, and one with the
      * value. */
-    return i2c_write_blocking(i2c_default, BME680_ADDR, buf, BME680_WRITE_LEN,
-                              false) == PICO_ERROR_GENERIC
+    return i2c_write_blocking(i2c0, BME680_ADDR, buf, BME680_WRITE_LEN,
+                            false) == PICO_ERROR_GENERIC
                ? ERROR
                : SUCCESS;
 }
@@ -34,11 +43,11 @@ bme680_write(uint8_t reg, uint8_t val)
 static error_t
 bme680_read(uint8_t reg, uint8_t *buf, size_t len)
 {
-    if (i2c_write_blocking(i2c_default, BME680_ADDR, &reg, 1, true) ==
+    if (i2c_write_blocking(i2c0, BME680_ADDR, &reg, 1, true) ==
         PICO_ERROR_GENERIC)
         return ERROR;
 
-    if (i2c_read_blocking(i2c_default, BME680_ADDR, buf, len, false) ==
+    if (i2c_read_blocking(i2c0, BME680_ADDR, buf, len, false) ==
         PICO_ERROR_GENERIC)
         return ERROR;
 
@@ -171,9 +180,9 @@ to_percent(uint8_t raw_data[2])
      * corresponds to the raw reading of the humidity from the sensor */
     uint16_t hum_adc = (raw_data[0] << 8) | (raw_data[1] << 0);
 
-    uint16_t par_h1 = (sensor_data.hum_calib_params[1] << 8) |
+    uint16_t par_h1 = (sensor_data.hum_calib_params[1] << 4) |
                       ((sensor_data.hum_calib_params[0] & 0x0F) << 0);
-    uint16_t par_h2 = (sensor_data.hum_calib_params[3] << 8) |
+    uint16_t par_h2 = (sensor_data.hum_calib_params[3] << 4) |
                       ((sensor_data.hum_calib_params[2] & 0xF0) << 0);
     uint8_t par_h3  = sensor_data.hum_calib_params[4];
     uint8_t par_h4  = sensor_data.hum_calib_params[5];
@@ -240,6 +249,12 @@ to_celsius(uint8_t raw_data[3])
 error_t
 bme680_init()
 {
+    i2c_init(i2c0, I2C_BAUDRATE);
+    gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA_PIN);
+    gpio_pull_up(I2C_SCL_PIN);
+
     /* Ensure that the sensor is indeed connected and available for
      * communication. */
     if (bme680_read(BME680_ID, &sensor_data.id, 1) == ERROR)
