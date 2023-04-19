@@ -22,7 +22,6 @@ typedef struct bme680_rslt {
     error_t error;
 } bme680_rslt_t;
 
-
 error_t bme680_init();
 bme680_rslt_t bme680_read_temp();
 bme680_rslt_t bme680_read_hum();

@@ -6,20 +6,21 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 #include "pico/binary_info.h"
+#include "pico/i2c_slave.h"
 
 #include "../inc/bosch/bme680.h"
 #include "../inc/motion/amn1.h"
 #include "../inc/sound/dfr0034.h"
 #include "../inc/common.h"
 
-#define TEMP_RESOLUTION 100
-#define HUM_RESOLUTION 100
-#define PRESS_RESOLUTION 1000
-#define I2C_FREQUENCY 400000
+#define I2C_BAUDRATE 400000
+#define I2C_SLAVE_ADDRESS 0x17
+#define I2C_SLAVE_SDA_PIN 18
+#define I2C_SLAVE_SCL_PIN 19
+
 #define SENSOR_QUERY_PERIOD_MS 3000
 #define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
 
-// sensor readings
 struct sensor_readings {
     bme680_rslt_t humidity;
     bme680_rslt_t press;
@@ -29,99 +30,89 @@ struct sensor_readings {
 };
 
 void
-print_sensor_value(struct sensor_readings sensor)
+i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event)
 {
-    printf("============ SENSOR READINGS ==============\n");
-    printf("Humidity (%%): %d.%02d\n", sensor.humidity.data / HUM_RESOLUTION,
-	   sensor.humidity.data % HUM_RESOLUTION);
-    printf("Pressure (hPa): %d.%02d\n", sensor.press.data / PRESS_RESOLUTION,
-	   sensor.press.data % PRESS_RESOLUTION);
-    printf("Temperature (C): %d.%02d\n",
-	   sensor.temp_celsius.data / TEMP_RESOLUTION,
-	   sensor.temp_celsius.data % TEMP_RESOLUTION);
-    printf("Has motion (bool): %d\n", sensor.has_motion.data);
-    printf("Sound level: %d\n", sensor.sound_level.data);
-    printf("===========================================\n\n");
+    /* Called from ISR, so keep it concise. */
+    switch (event) {
+        case I2C_SLAVE_RECEIVE:
+            break;
+        case I2C_SLAVE_REQUEST:
+            break;
+        case I2C_SLAVE_FINISH:
+            break;
+        default:
+            break;
+    }
+}
+
+/* Initializes the I2C communication to the BEATA base station.
+   All sensor nodes will act as slaves, and the base station as master. */
+void
+base_station_i2c_init()
+{
+    gpio_init(I2C_SLAVE_SDA_PIN);
+    gpio_init(I2C_SLAVE_SCL_PIN);
+    gpio_set_function(I2C_SLAVE_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SLAVE_SCL_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SLAVE_SDA_PIN);
+    gpio_pull_up(I2C_SLAVE_SCL_PIN);
+
+    i2c_init(i2c1, I2C_BAUDRATE);
+    i2c_slave_init(i2c1, I2C_SLAVE_ADDRESS, &i2c_slave_handler);
 }
 
 void
-init_sensors()
+sensors_init()
 {
     while (bme680_init() != SUCCESS) {
-	printf(
-	    "SENSORNODE_ERROR: could not connect to BME680. Trying again in %d "
-	    "ms.\n",
-	    INIT_RETRY_DELAY_MS);
-	sleep_ms(INIT_RETRY_DELAY_MS);
+	    printf("ERROR: could not connect to BME680, retrying...\n");
+	    sleep_ms(INIT_RETRY_DELAY_MS);
     }
 
     while (amn1_init() != SUCCESS) {
-	printf(
-	    "SENSORNODE_ERROR: could not setup AMN1. Trying again in %d "
-	    "ms.\n",
-	    INIT_RETRY_DELAY_MS);
-	sleep_ms(INIT_RETRY_DELAY_MS);
+	    printf("ERROR: could not connect to AMN1, retrying...\n");
+	    sleep_ms(INIT_RETRY_DELAY_MS);
     }
 
     while (dfr0034_init() != SUCCESS) {
-	printf(
-	    "SENSORNODE_ERROR: could not setup DFR0034. Trying again in %d "
-	    "ms.\n",
-	    INIT_RETRY_DELAY_MS);
-	sleep_ms(INIT_RETRY_DELAY_MS);
+	    printf("ERROR: could not connect to DFR0034, retrying...\n");
+	    sleep_ms(INIT_RETRY_DELAY_MS);
     }
-}
-
-void
-init_serial_connections()
-{
-    /* This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on
-     * a Pico)
-     * I2C is "open drain", pull ups to keep signal high when no data is being
-     * sent */
-    i2c_init(i2c_default, I2C_FREQUENCY);
-    gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-    gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 }
 
 int
 main()
 {
-    struct sensor_readings sensor = {0, 0, 0};
+    struct sensor_readings sensor;
 
     stdio_init_all();
     adc_init();
-
-    printf("Starting sensor-node and attempting connections\n");
-    init_serial_connections();
-    init_sensors();
+    sensors_init();
+    base_station_i2c_init();
 
     printf("Starting readings...\n");
     for (;;) {
-	sensor.temp_celsius = bme680_read_temp();
-	if (sensor.temp_celsius.error == ERROR)
-	    printf("BME680_ERROR: Could not fetch temperature.");
+        sensor.temp_celsius = bme680_read_temp();
+        if (sensor.temp_celsius.error == ERROR)
+            printf("BME680_ERROR: Could not fetch temperature.");
 
-	sensor.humidity = bme680_read_hum();
-	if (sensor.humidity.error == ERROR)
-	    printf("BME680_ERROR: Could not fetch humidity.");
+        sensor.humidity = bme680_read_hum();
+        if (sensor.humidity.error == ERROR)
+            printf("BME680_ERROR: Could not fetch humidity.");
 
-	sensor.press = bme680_read_press();
-	if (sensor.press.error == ERROR)
-	    printf("BME680_ERROR: Could not fetch pressure.");
+        sensor.press = bme680_read_press();
+        if (sensor.press.error == ERROR)
+            printf("BME680_ERROR: Could not fetch pressure.");
 
-	sensor.has_motion = amn1_read_motion();
-	if (sensor.has_motion.error == ERROR)
-	    printf("AMN1_ERROR: Could not check for motion.");
+        sensor.has_motion = amn1_read_motion();
+        if (sensor.has_motion.error == ERROR)
+            printf("AMN1_ERROR: Could not check for motion.");
 
-	sensor.sound_level = dfr0034_read_sound();
-	if (sensor.sound_level.error == ERROR)
-	    printf("DFR0034_ERROR: Could not check sound level.");
+        sensor.sound_level = dfr0034_read_sound();
+        if (sensor.sound_level.error == ERROR)
+            printf("DFR0034_ERROR: Could not check sound level.");
 
-	print_sensor_value(sensor);
-	sleep_ms(SENSOR_QUERY_PERIOD_MS);
+        sleep_ms(SENSOR_QUERY_PERIOD_MS);
     }
 
     return 0;
