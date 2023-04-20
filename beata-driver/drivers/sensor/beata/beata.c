@@ -1,11 +1,3 @@
-#include <zephyr/irq.h>
-#include <zephyr/device.h>
-#include <zephyr/pm/device.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/sensor.h>
-
 #include "beata.h"
 
 LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
