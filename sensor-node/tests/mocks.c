@@ -171,3 +171,18 @@ uint16_t adc_read()
         return 0;
     }
 }
+
+int i2c_init(int i2c, int i2c_baudrate)
+{
+    return 1;
+}
+
+int gpio_set_function(int i2c_sda_pin, int gpio_func_i2c)
+{
+    return 1;
+}
+
+int gpio_pull_up(int i2c)
+{
+    return 1;
+}
