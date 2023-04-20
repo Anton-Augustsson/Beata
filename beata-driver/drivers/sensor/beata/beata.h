@@ -17,7 +17,6 @@
 #include <zephyr/drivers/sensor.h>
 #endif
 
-
 #define BEATA_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #define DT_DRV_COMPAT beata
 
