@@ -1,8 +1,6 @@
 #include "amn1.h"
 
 #define AMN1_GPIO_PIN 26
-#define AMN1_ADC_CHANNEL 0
-
 #define AMN1_STABILITY_TIME_MS 30 * 1000
 #define AMN1_MOTION_THRESHOLD_V 3
 

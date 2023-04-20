@@ -15,7 +15,7 @@
  */
 int init_suite_bme680(void) 
 {
-  printf("Init test suit bme680\n");
+  printf("Init test suite bme680\n");
   if (bme680_init() != SUCCESS) {
         printf("SENSORNODE_ERROR: could not connect to BME680.");
   }
@@ -32,7 +32,7 @@ int init_suite_bme680(void)
  */
 int clean_suite_bme680(void) 
 {
-  printf("Clean test suit bme680\n");
+  printf("Clean test suite bme680\n");
 
   return 0;
 }
