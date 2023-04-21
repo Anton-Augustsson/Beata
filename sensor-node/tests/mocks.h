@@ -25,7 +25,6 @@ int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*
 int adc_select_input(int adc_channel);
 uint16_t adc_read();
 
-#define GPIO_FUNC_I2C 1
 
 int i2c_init(int i2c, int i2c_baudrate);
 int gpio_set_function(int i2c_sda_pin, int gpio_func_i2c);
