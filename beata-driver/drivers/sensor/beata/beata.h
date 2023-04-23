@@ -1,11 +1,21 @@
 #ifndef __ZEPHYR_DRIVERS_SENSOR_BEATA__
 #define __ZEPHYR_DRIVERS_SENSOR_BEATA__
 
+#ifdef BUILD_TESTS
+#include "../../../tests/mocks.h"
+#else
+#include <zephyr/irq.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#endif
 
 #define BEATA_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #define DT_DRV_COMPAT beata

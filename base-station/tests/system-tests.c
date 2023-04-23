@@ -1,10 +1,7 @@
-/*
- *  Tests for bosch bme680 gas sensor
- *
- */
+#include <stdio.h>
 
-#include "unit-test-suit-bme680.h"
-
+/* Write real tests don't import sensor-node tests */
+#include "../../sensor-node/tests/unit-test-suit-bme680.h"
 
 int main() 
 {

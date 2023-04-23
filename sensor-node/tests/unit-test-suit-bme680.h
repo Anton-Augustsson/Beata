@@ -4,7 +4,7 @@
 #include "../inc/bosch/bme680.h"
 
 #define TEMP_RESOLUTION 100
-#define HUM_RESOLUTION 100
+#define HUM_RESOLUTION 1000
 #define PRESS_RESOLUTION 1000
 
 
@@ -15,7 +15,7 @@
  */
 int init_suite_bme680(void) 
 {
-  printf("Init test suit bme680\n");
+  printf("Init test suite bme680\n");
   if (bme680_init() != SUCCESS) {
         printf("SENSORNODE_ERROR: could not connect to BME680.");
   }
@@ -32,7 +32,7 @@ int init_suite_bme680(void)
  */
 int clean_suite_bme680(void) 
 {
-  printf("Clean test suit bme680\n");
+  printf("Clean test suite bme680\n");
 
   return 0;
 }
@@ -72,14 +72,13 @@ int test_read_humidity(void)
   bme680_rslt_t humidity = bme680_read_hum();
   if (humidity.error == ERROR)
   {
-    printf("---BME680_ERROR: Could not fetch humidity.");
+    printf("---BME680_ERROR: Could not fetch humidity.\n");
     return 0;
   }
 
-  // FIXME: wrong humidity, change when it is correct
-  if (humidity.data != -224735)
+  if (humidity.data != 31435)
   {
-    printf("---BME680_ERROR: Wrong humidity");
+    printf("---BME680_ERROR: Wrong humidity (expected 31435 but got %d)\n", humidity.data);
     return 0;
   }
 

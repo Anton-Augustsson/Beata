@@ -1,4 +1,4 @@
-add_executable(UnitTests unit-tests-bme680.c)
+add_executable(UnitTests unit-tests.c)
 
 add_library(
     mocks
