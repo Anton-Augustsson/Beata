@@ -4,11 +4,11 @@ function(pico_add_extra_outputs)
   # Do nothing - this is a dummy function
 endfunction()
 
-set(SENSOR_NODE_DIR ../sensor-node)
+set(SENSOR_NODE_DIR ../../sensor-node)
 set(SENSOR_NODE_TESTS_DIR "${SENSOR_NODE_DIR}/tests")
 set(SENSOR_NODE_INC_DIR "${SENSOR_NODE_DIR}/inc")
 
-set(DRIVER_DIR ../beata-driver)
+set(DRIVER_DIR ../../beata-driver)
 set(DRIVER_TESTS_DIR "${SENSOR_NODE_DIR}/tests")
 set(DRIVER_SRC_DIR "${SENSOR_NODE_DIR}/drivers/sensor/beata")
 
@@ -50,8 +50,8 @@ if(BUILD_TESTS)
 
     add_library(
         mocks_base_station
-        ../base-station/tests/mocks.h
-        ../base-station/tests/mocks.c
+        mocks.h
+        mocks.c
     )
 
     target_compile_definitions(inc PUBLIC -D BUILD_TESTS)

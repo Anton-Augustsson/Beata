@@ -1,5 +1,7 @@
 #include <stdio.h>
-#include "../sensor-node/tests/unit-test-suit-bme680.h"
+
+/* Write real tests don't import sensor-node tests */
+#include "../../sensor-node/tests/unit-test-suit-bme680.h"
 
 int main() 
 {
