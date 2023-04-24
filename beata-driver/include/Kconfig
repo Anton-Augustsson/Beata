@@ -1,0 +1,4 @@
+config INCLUDE
+    bool "include support"
+    help
+        This option enabled the including library
