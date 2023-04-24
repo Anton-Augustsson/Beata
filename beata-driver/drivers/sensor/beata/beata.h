@@ -1,6 +1,8 @@
 #ifndef __ZEPHYR_DRIVERS_SENSOR_BEATA__
 #define __ZEPHYR_DRIVERS_SENSOR_BEATA__
 
+#define DT_DRV_COMPAT zephyr_beata
+
 #ifdef BUILD_TESTS
 #include "../../../tests/mocks.h"
 #else
@@ -17,8 +19,7 @@
 #include <zephyr/drivers/sensor.h>
 #endif
 
-#define BEATA_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#define DT_DRV_COMPAT beata
+LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
 
 /* data registers */
 #define SENSOR_NODE_TEMP    0x00
@@ -37,13 +38,6 @@ enum beata_channel {
 	SENSOR_CHAN_SOUND = SENSOR_CHAN_PRIV_START,
 };
 
-struct beata_bus_io
-{
-	beata_bus_check_fn check;
-	beata_reg_read_fn read;
-	beata_reg_write_fn write;
-};
-
 struct beata_config
 {
 	struct i2c_dt_spec i2c;
@@ -52,37 +46,11 @@ struct beata_config
 
 struct beata_data
 {
-	int32_t 	humidity;
-	int32_t 	press;
-	int32_t 	temp_celsius;
-	bool 		has_motion;
-	uint16_t 	sound_level;
-};
-
-static int
-beata_bus_check_i2c(const struct i2c_dt_spec *i2c)
-{
-	return device_is_ready(i2c->bus) ? 0 : -ENODEV;
-}
-
-static int
-beata_reg_read_i2c(const struct device *dev, uint8_t start, uint8_t *buf, int size)
-{
-	const struct beata_config *config = dev->config;
-	return i2c_burst_read_dt(&config->i2c, start, buf, size);
-}
-
-static int
-beata_reg_write_i2c(const struct device *dev, uint8_t reg, uint8_t val)
-{
-	const struct beata_config *config = dev->config;
-	return i2c_reg_write_byte_dt(&config->i2c, reg, val);
-}
-
-const struct beata_bus_io beata_bus_io_i2c = {
-	.check = beata_bus_check_i2c,
-	.read  = beata_reg_read_i2c,
-	.write = beata_reg_write_i2c,
+	int32_t		humidity;
+	int32_t		press;
+	int32_t		temp_celsius;
+	bool		has_motion;
+	uint16_t	sound_level;
 };
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BEATA__ */
