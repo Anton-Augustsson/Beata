@@ -4,43 +4,143 @@
 
 int reg_read = -1;
 int channel = -1;
+static enum reg_mode_t reg_mode = NormalReg;
 
-int set_buf_3(uint8_t *buf, size_t len, uint8_t value1, uint8_t value2, uint8_t value3)
-{
-    if (len == 3) 
-    {
-        buf[0] = value1;
-        buf[1] = value2;
-        buf[2] = value3;
-        reg_read = -1;
-        return 1;
+struct reg_value1 {
+    int reg;
+    uint8_t value[7][1];
+};
+
+struct reg_value2 {
+    int reg;
+    uint8_t value[7][2];
+};
+
+struct reg_value3 {
+    int reg;
+    uint8_t value[7][3];
+};
+
+struct values {
+    uint8_t *value;
+    int success;
+};
+
+
+#define REGS_VALUES1_SIZE 30
+#define REGS_VALUES2_SIZE 1
+#define REGS_VALUES3_SIZE 2
+#define ERROR_VALUE1 {{0}}
+#define ERROR_VALUE2 {{0, 0}}
+#define ERROR_VALUE3 {{0, 0, 0}}
+
+
+// TODO: fix const
+struct reg_value1 regs_values1[REGS_VALUES1_SIZE] = {
+    (struct reg_value1){BME680_TEMP_PAR_T1_LSB, {{243}, {243}, {243}, {243}, {243}, {243}, {243}}},
+    (struct reg_value1){BME680_TEMP_PAR_T1_MSB, {{101}, {101}, {101}, {101}, {101}, {101}, {101}}},
+    (struct reg_value1){BME680_TEMP_PAR_T2_LSB, {{85}, {85}, {85}, {85}, {85}, {85}, {85}}},
+    (struct reg_value1){BME680_TEMP_PAR_T2_MSB, {{103}, {103}, {103}, {103}, {103}, {103}, {103}}},
+    (struct reg_value1){BME680_TEMP_PAR_T3, {{3}, {3}, {3}, {3}, {3}, {3}, {3}}},
+    (struct reg_value1){BME680_HUM_PAR_H1_LSB, {{55}, {55}, {55}, {55}, {55}, {55}, {55}}},
+    (struct reg_value1){BME680_HUM_PAR_H1_MSB, {{67}, {67}, {67}, {67}, {67}, {67}, {67}}},
+    (struct reg_value1){BME680_HUM_PAR_H2_MSB, {{59}, {59}, {59}, {59}, {59}, {59}, {59}}},
+    (struct reg_value1){BME680_HUM_PAR_H3, {{0}, {0}, {0}, {0}, {0}, {0}, {0}}},
+    (struct reg_value1){BME680_HUM_PAR_H4, {{45}, {45}, {45}, {45}, {45}, {45}, {45}}},
+    (struct reg_value1){BME680_HUM_PAR_H5, {{20}, {20}, {20}, {20}, {20}, {20}, {20}}},
+    (struct reg_value1){BME680_HUM_PAR_H6, {{120}, {120}, {120}, {120}, {120}, {120}, {120}}},
+    (struct reg_value1){BME680_HUM_PAR_H7, {{156}, {156}, {156}, {156}, {156}, {156}, {156}}},
+    (struct reg_value1){BME680_PRESS_PAR_P1_LSB, {{244}, {244}, {244}, {244}, {244}, {244}, {244}}},
+    (struct reg_value1){BME680_PRESS_PAR_P1_MSB, {{143}, {143}, {143}, {143}, {143}, {143}, {143}}},
+    (struct reg_value1){BME680_PRESS_PAR_P2_LSB, {{217}, {217}, {217}, {217}, {217}, {217}, {217}}},
+    (struct reg_value1){BME680_PRESS_PAR_P2_MSB, {{215}, {215}, {215}, {215}, {215}, {215}, {215}}},
+    (struct reg_value1){BME680_PRESS_PAR_P3, {{88}, {88}, {88}, {88}, {88}, {88}, {88}}},
+    (struct reg_value1){BME680_PRESS_PAR_P4_LSB, {{6}, {6}, {6}, {6}, {6}, {6}, {6}}},
+    (struct reg_value1){BME680_PRESS_PAR_P4_MSB, {{43}, {43}, {43}, {43}, {43}, {43}, {43}}},
+    (struct reg_value1){BME680_PRESS_PAR_P5_LSB, {{215}, {215}, {215}, {215}, {215}, {215}, {215}}},
+    (struct reg_value1){BME680_PRESS_PAR_P5_MSB, {{254}, {254}, {254}, {254}, {254}, {254}, {254}}},
+    (struct reg_value1){BME680_PRESS_PAR_P6, {{30}, {30}, {30}, {30}, {30}, {30}, {30}}},
+    (struct reg_value1){BME680_PRESS_PAR_P7, {{48}, {48}, {48}, {48}, {48}, {48}, {48}}},
+    (struct reg_value1){BME680_PRESS_PAR_P8_LSB, {{132}, {132}, {132}, {132}, {132}, {132}, {132}}},
+    (struct reg_value1){BME680_PRESS_PAR_P8_MSB, {{242}, {242}, {242}, {242}, {242}, {242}, {242}}},
+    (struct reg_value1){BME680_PRESS_PAR_P9_LSB, {{37}, {37}, {37}, {37}, {37}, {37}, {37}}},
+    (struct reg_value1){BME680_PRESS_PAR_P9_MSB, {{247}, {247}, {247}, {247}, {247}, {247}, {247}}},
+    (struct reg_value1){BME680_PRESS_PAR_P10, {{30}, {30}, {30}, {30}, {30}, {30}, {30}}},
+    (struct reg_value1){BME680_ID, {{0}, {0}, {0}, {0}, {0}, {0}, {0}}}
+
+};
+
+struct reg_value2 regs_values2[REGS_VALUES2_SIZE] = {
+    (struct reg_value2){BME680_HUM_ADC_MSB, {{92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}}}
+};
+
+struct reg_value3 regs_values3[REGS_VALUES3_SIZE] = {
+    (struct reg_value3){BME680_TEMP_ADC_MSB, {{122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}}},
+    (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}}
+};
+     
+struct values get_value1(int reg) {
+    struct values res;
+    for (int i = 0; i < REGS_VALUES1_SIZE; i++) {
+        printf("reg: %d, reg_lock: %d\n", regs_values1[i].reg, reg);
+        if (regs_values1[i].reg == reg) {
+            res.value = regs_values1[i].value[reg_mode];
+            printf("(1) found it\n");
+            res.success = 1;
+            return res;
+        }
     }
-
-    return -1;
+    printf("(1) could not find it\n");
+    res.value = regs_values1[0].value[reg_mode]; //ERROR_VALUE3;
+    res.success = -1;
+    return res;
 }
-int set_buf_2(uint8_t *buf, size_t len, uint8_t value1, uint8_t value2)
-{
-    if (len == 2) 
-    {
-        buf[0] = value1;
-        buf[1] = value2;
-        reg_read = -1;
-        return 1;
+
+struct values get_value2(int reg) {
+    struct values res;
+    for (int i = 0; i < REGS_VALUES2_SIZE; i++) {
+        if (regs_values2[i].reg == reg) {
+            printf("(2) found it\n");
+            res.value = regs_values2[i].value[reg_mode];
+            res.success = 1;
+            return res;
+        }
     }
-
-    return -1;
+    printf("(2) could not find it\n");
+    res.value = regs_values2[0].value[reg_mode]; //ERROR_VALUE3;
+    res.success = -1;
+    return res;
 }
-int set_buf_1(uint8_t *buf, size_t len, uint8_t value1)
-{
-    if (len == 1) 
-    {
-        buf[0] = value1;
-        reg_read = -1;
-        return 1;
+
+struct values get_value3(int reg) {
+    struct values res;
+    for (int i = 0; i < REGS_VALUES3_SIZE; i++) {
+        if (regs_values3[i].reg == reg) {
+            printf("(3) found it");
+            res.value = regs_values3[i].value[reg_mode];
+            res.success = 1;
+            return res;
+        }
     }
-
-    return -1;
+    printf("(3) could not find it");
+    res.value = regs_values3[0].value[reg_mode]; //ERROR_VALUE3;
+    res.success = -1;
+    return res;
 }
+
+int set_buf(uint8_t *buf, size_t len, struct values value){
+    if (value.success != 1) {
+        return -1;
+    }
+    
+    for (int i = 0; i < len; i++)
+    {
+        buf[i] = value.value[i];
+    }
+    
+    return 1;
+}
+
 
 int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option)
 {
@@ -50,73 +150,13 @@ int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option)
 
 int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
 {
-    switch(reg_read){    
-        case BME680_TEMP_PAR_T1_LSB:    
-            return set_buf_1(buf, len, 243);
-        case BME680_TEMP_PAR_T1_MSB:    
-            return set_buf_1(buf, len, 101);
-        case BME680_TEMP_PAR_T2_LSB:    
-            return set_buf_1(buf, len, 85);
-        case BME680_TEMP_PAR_T2_MSB:    
-            return set_buf_1(buf, len, 103);
-        case BME680_TEMP_PAR_T3: 
-            return set_buf_1(buf, len, 3);
-        case BME680_TEMP_ADC_MSB: 
-            return set_buf_3(buf, len, 122, 125, 144);
-        case BME680_HUM_PAR_H1_LSB: // same as BME680_HUM_PAR_H2_LSB
-            return set_buf_1(buf, len, 55);
-        case BME680_HUM_PAR_H1_MSB:
-            return set_buf_1(buf, len, 67);
-        case BME680_HUM_PAR_H2_MSB:
-            return set_buf_1(buf, len, 59);
-        case BME680_HUM_PAR_H3:
-            return set_buf_1(buf, len, 0);
-        case BME680_HUM_PAR_H4:
-            return set_buf_1(buf, len, 45);
-        case BME680_HUM_PAR_H5:
-            return set_buf_1(buf, len, 20);
-        case BME680_HUM_PAR_H6:
-            return set_buf_1(buf, len, 120);
-        case BME680_HUM_PAR_H7:
-            return set_buf_1(buf, len, 156);
-        case BME680_HUM_ADC_MSB:
-            return set_buf_2(buf, len, 92, 213);
-        case BME680_PRESS_PAR_P1_LSB:
-            return set_buf_1(buf, len, 244);
-        case BME680_PRESS_PAR_P1_MSB:
-            return set_buf_1(buf, len, 143);
-        case BME680_PRESS_PAR_P2_LSB:
-            return set_buf_1(buf, len, 217);
-        case BME680_PRESS_PAR_P2_MSB:
-            return set_buf_1(buf, len, 215);
-        case BME680_PRESS_PAR_P3:
-            return set_buf_1(buf, len, 88);
-        case BME680_PRESS_PAR_P4_LSB:
-            return set_buf_1(buf, len, 6);
-        case BME680_PRESS_PAR_P4_MSB:
-            return set_buf_1(buf, len, 43);
-        case BME680_PRESS_PAR_P5_LSB:
-            return set_buf_1(buf, len, 215);
-        case BME680_PRESS_PAR_P5_MSB:
-            return set_buf_1(buf, len, 254);
-        case BME680_PRESS_PAR_P6:
-            return set_buf_1(buf, len, 30);
-        case BME680_PRESS_PAR_P7:
-            return set_buf_1(buf, len, 48);
-        case BME680_PRESS_PAR_P8_LSB:
-            return set_buf_1(buf, len, 132);
-        case BME680_PRESS_PAR_P8_MSB:
-            return set_buf_1(buf, len, 242);
-        case BME680_PRESS_PAR_P9_LSB:
-            return set_buf_1(buf, len, 37);
-        case BME680_PRESS_PAR_P9_MSB:
-            return set_buf_1(buf, len, 247);
-        case BME680_PRESS_PAR_P10:
-            return set_buf_1(buf, len, 30);
-        case BME680_PRESS_ADC_MSB:
-            return set_buf_3(buf, len, 65, 154, 224);
-        case BME680_ID:
-            return set_buf_1(buf, len, 1);
+    switch(len){    
+        case 1:
+            return set_buf(buf, len, get_value1(reg_read));
+        case 2:
+            return set_buf(buf, len, get_value2(reg_read));
+        case 3:
+            return set_buf(buf, len, get_value3(reg_read));
         default: // will go to default if reg_read == -1 
             printf("ERROR: Reading a unknown register (%d).\n", reg_read);
             return -1;
