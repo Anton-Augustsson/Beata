@@ -24,9 +24,12 @@ int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*
 int adc_select_input(int adc_channel);
 uint16_t adc_read();
 
-enum reg_mode_t{Hot = 0, Cold, Humid = 1, Dry = 2, HighPress = 3, 
-              LowPress = 4, NormalReg = 5, InvalidReg = 6};
+enum reg_mode_t{Hot = 0, Cold = 1, Humid = 2, Dry = 3, HighPress = 4, 
+                LowPress = 5, NormalReg = 6, InvalidReg = 7};
 enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3, 
-              NormalAdc = 4, InvalidAdc = 5};
+                NormalAdc = 4, InvalidAdc = 5};
+
+void set_reg_mode(enum reg_mode_t new_mode);
+void set_adc_mode(enum adc_mode_t new_mode);
 
 #endif /* _MOCKS_H_ */
