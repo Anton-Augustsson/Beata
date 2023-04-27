@@ -12,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # For using west flash with picoprobe
 set(OPENOCD "openocd")
+set(DRPI_PICO_DEBUG_ADAPTER "picoprobe")
 set(OPENOCD_DEFAULT_PATH "/usr/local/share/openocd/scripts")
 
 # Define project name

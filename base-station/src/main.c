@@ -8,7 +8,7 @@
 #define SLEEP_TIME 3000
 
 int main() {
-    const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+    const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
     struct sensor_value temperature, humidity, pressure, motion, sound;
 
     while (!device_is_ready(dev)) {
