@@ -8,7 +8,7 @@ station, running zephyr, and another Pico for the sensor node.
 ### base-station
 To compile the base-station,`cd` into the folder and use:
 ```zsh
-west build . -b rpi_pico
+west build base-station -b rpi_pico
 ```
 The command above will generate a build folder in the same directory. Copy over
 the `.uf2` file found in `build/zephyr/zephyr.uf2`.

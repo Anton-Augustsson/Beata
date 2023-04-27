@@ -3,7 +3,7 @@
 static int
 beata_init(const struct device *dev)
 {
-    LOG_DBG("Initialising Beata.\n");
+    printk("\n\nInitialising Beata.\n");
     return 1; // TODO:
 }
 
@@ -27,6 +27,7 @@ beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
 static int
 beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val)
 {
+	printk("AHAHAHAHA!!");
     struct beata_data *data = dev->data;
 
     switch (chan)
@@ -63,19 +64,18 @@ beata_attr_set(const struct device *dev, enum sensor_channel chan,
 static const struct sensor_driver_api beata_api = {
 	.sample_fetch   = &beata_sample_fetch,
 	.channel_get    = &beata_channel_get,
-	.attr_set       = &beata_attr_set,
 };
 
 #define BEATA_INIT(inst)						\
-	static struct beata_data beata_data_##inst;			\
-									\
-	static const struct beata_config beata_config_##inst = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,			\
-			      &beata_data_##inst,			\
-			      &beata_config_##inst, POST_KERNEL,	\
+	static struct beata_data beata_data_##inst;	\
+												\
+	static const struct beata_config beata_config_##inst = { \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					 \
+	};													     \
+															 \
+	DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,			 \
+			      &beata_data_##inst,			             \
+			      &beata_config_##inst, POST_KERNEL,	     \
 			      CONFIG_SENSOR_INIT_PRIORITY, &beata_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BEATA_INIT)
