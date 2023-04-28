@@ -7,25 +7,28 @@
 #define REGS_VALUES1_SIZE 30
 #define REGS_VALUES2_SIZE 1
 #define REGS_VALUES3_SIZE 2
-#define NUM_MODES 8
+#define ADC_VALUES_SIZE 2
+#define NUM_MODES_REG 8
+#define NUM_MODES_ADC 6
 
 int reg_read = NO_REG_READ;
 int channel = NO_CHANNEL;
 static enum reg_mode_t reg_mode = NormalReg; // Default reg values
+static enum adc_mode_t adc_mode = NormalAdc; // Default reg values
 
 struct reg_value1 {
     int reg;
-    uint8_t value[NUM_MODES][1];
+    uint8_t value[NUM_MODES_REG][1];
 };
 
 struct reg_value2 {
     int reg;
-    uint8_t value[NUM_MODES][2];
+    uint8_t value[NUM_MODES_REG][2];
 };
 
 struct reg_value3 {
     int reg;
-    uint8_t value[NUM_MODES][3];
+    uint8_t value[NUM_MODES_REG][3];
 };
 
 struct values {
@@ -33,6 +36,22 @@ struct values {
     int success;
 };
 
+struct adc_return_values {
+    uint16_t *value;
+    int success;
+};
+
+
+struct adc_value {
+    int adc_channel;
+    uint16_t value[NUM_MODES_ADC][1];
+};
+
+
+struct adc_value adc_values1[NUM_MODES_ADC] = {
+    (struct adc_value){AMN1_ADC_CHANNEL, {{(uint16_t)(4/ADC_CONVERSION_FACTOR)}, {(uint16_t)(4/ADC_CONVERSION_FACTOR)}, {(uint16_t)(100/ADC_CONVERSION_FACTOR)}, {0}, {(uint16_t)(4/ADC_CONVERSION_FACTOR)}, {(uint16_t)(65535/ADC_CONVERSION_FACTOR)}}},
+    (struct adc_value){DFR0034_ADC_CHANNEL, {{500}, {0}, {100}, {100}, {100}, {65535}}},
+};
 
 // TODO: fix const
 /* The format for regs_values1 of the reg values are as follows:
@@ -91,6 +110,10 @@ void set_reg_mode(enum reg_mode_t new_mode) {
     reg_mode = new_mode;
 }
 
+void set_adc_mode(enum adc_mode_t new_mode) {
+    adc_mode = new_mode;
+}
+
 struct values get_value1(int reg) {
     struct values res;
     for (int i = 0; i < REGS_VALUES1_SIZE; i++) {
@@ -133,13 +156,26 @@ struct values get_value3(int reg) {
     return res;
 }
 
+struct adc_return_values get_value_adc(int adc_channel) {
+    struct adc_return_values res;
+    for (int i = 0; i < ADC_VALUES_SIZE; i++) {
+        if (adc_values1[i].adc_channel == adc_channel) {
+            res.value = adc_values1[i].value[adc_mode];
+            res.success = 1;
+            return res;
+        }
+    }
+    res.value = adc_values1[0].value[adc_mode];
+    res.success = -1;
+    return res;
+}
+
 int set_buf(uint8_t *buf, size_t len, struct values value){
     if (value.success != 1) {
         return -1;
     }
     
-    for (int i = 0; i < len; i++)
-    {
+    for (int i = 0; i < len; i++) {
         buf[i] = value.value[i];
     }
     
@@ -157,7 +193,8 @@ int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option)
 
 int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
 {
-    switch(len){    
+    switch(len)
+    {    
         case 1:
             return set_buf(buf, len, get_value1(reg_read));
         case 2:
@@ -171,13 +208,11 @@ int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
 }
 
 
-int adc_gpio_init(int gpio_pin)
-{
+int adc_gpio_init(int gpio_pin) {
     return 1;
 }
 
-int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*), uint8_t *null_value, bool option)
-{
+int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*), uint8_t *null_value, bool option) {
     callback(1, NULL);
     return 1;
 }
@@ -186,42 +221,32 @@ int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*
  * Stores the adc_channel to global channel variable
  * so it can be read in adc_read
  */
-int adc_select_input(int adc_channel)
-{
+int adc_select_input(int adc_channel) {
     switch (adc_channel)
     {
-    case AMN1_ADC_CHANNEL:
-        channel = AMN1_ADC_CHANNEL;
-        return 1;
-    
-    case DFR0034_ADC_CHANNEL:
-        channel = DFR0034_ADC_CHANNEL;
-        return 1;
-
-    default:
-        printf("ERROR: unknown adc channel (%d).\n", adc_channel);
-        return -1;
+        case AMN1_ADC_CHANNEL:
+            channel = AMN1_ADC_CHANNEL;
+            return 1;
+        case DFR0034_ADC_CHANNEL:
+            channel = DFR0034_ADC_CHANNEL;
+            return 1;
+        default:
+            printf("ERROR: unknown adc channel (%d).\n", adc_channel);
+            return -1;
     }
 }
 
 /*
  * Reads the value depending on what channel has been selected
  */
-uint16_t adc_read()
-{
-    switch (channel)
-    {
-    case AMN1_ADC_CHANNEL:
-        channel = -1;
-        return 4/ADC_CONVERSION_FACTOR;
-    
-    case DFR0034_ADC_CHANNEL:
-        channel = -1;
-        return 100;
+uint16_t adc_read() {
+    struct adc_return_values res = get_value_adc(channel);
+    channel = -1;
 
-    default:
+    if (res.success) {
+        return res.value[0];
+    } else {
         printf("ERROR: reading a unknown adc channel (%d).\n", channel);
-        channel = -1;
         return 0;
     }
 }

@@ -15,14 +15,12 @@
 int assert_read_temp(int correct_value)
 {
   bme680_rslt_t temp_celsius = bme680_read_temp();
-  if (temp_celsius.error == ERROR)
-  {
+  if (temp_celsius.error == ERROR) {
       printf("---BME680_ERROR: Could not fetch temperature.\n");
       return 0;
   }
 
-  if (temp_celsius.data != correct_value)
-  {
+  if (temp_celsius.data != correct_value) {
     printf("---BME680_ERROR: Wrong temp (expected %d but got %d)\n", correct_value, temp_celsius.data);
     return 0;
   }
@@ -39,15 +37,13 @@ int assert_read_temp(int correct_value)
 int assert_read_humidity(int correct_value) 
 {
   bme680_rslt_t humidity = bme680_read_hum();
-  if (humidity.error == ERROR)
-  {
+  if (humidity.error == ERROR) {
     printf("---BME680_ERROR: Could not fetch humidity.\n");
     return 0;
   }
 
   // FIXME: wrong humidity, change when it is correct
-  if (humidity.data != correct_value)
-  {
+  if (humidity.data != correct_value) {
     printf("---BME680_ERROR: Wrong humidity (expected %d but got %d)\n", correct_value, humidity.data);
     return 0;
   }
@@ -64,14 +60,12 @@ int assert_read_humidity(int correct_value)
 int assert_read_pressure(int correct_value) 
 {
   bme680_rslt_t press = bme680_read_press();
-  if (press.error == ERROR)
-  {
+  if (press.error == ERROR) {
     printf("---BME680_ERROR: Could not fetch pressure.\n");
     return 0;
   }
 
-  if (press.data != correct_value)
-  {
+  if (press.data != correct_value) {
     printf("---BME680_ERROR: Wrong press (expected %d but got %d)\n", correct_value, press.data);
     return 0;
   }
