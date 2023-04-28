@@ -73,7 +73,7 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
 			val->val1 = data->sound_level / 100;
 			val->val2 = data->sound_level % 100;
 	} else
-		return -EINVAL;
+		return EINVAL;
 
     return 0;
 }
