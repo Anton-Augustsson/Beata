@@ -35,8 +35,8 @@ bme680_write(uint8_t reg, uint8_t val)
     /* A '2' is chosen here because you are always sending an array with 2
      * elements. One element as the address of where to write, and one with the
      * value. */
-    return i2c_write_blocking(i2c1, BME680_ADDR, buf, BME680_WRITE_LEN,
-	    false) == PICO_ERROR_GENERIC
+    return i2c_write_blocking(i2c1, BME680_ADDR, buf, BME680_WRITE_LEN, false)
+	== PICO_ERROR_GENERIC
 	? ERROR
 	: SUCCESS;
 }
@@ -150,16 +150,13 @@ to_pascal(uint8_t raw_data[3])
     else
 	press_comp = ((press_comp << 1) / (uint32_t)var1);
 
-    var1 = ((int32_t)par_p9 *
-	    (int32_t)(((press_comp >> 3) * (press_comp >> 3)) >> 13)) >>
-	12;
+    var1 = ((int32_t)par_p9 * (int32_t)(((press_comp >> 3) * (press_comp >> 3)) >> 13)) >> 12;
     var2 = ((int32_t)(press_comp >> 2) * (int32_t)par_p8) >> 13;
     int32_t var3 = ((int32_t)(press_comp >> 8) * (int32_t)(press_comp >> 8) *
-	    (int32_t)(press_comp >> 8) * (int32_t)par_p10) >>
-	17;
+	    (int32_t)(press_comp >> 8) * (int32_t)par_p10) >> 17;
 
-    press_comp = (int32_t)(press_comp) +
-	((var1 + var2 + var3 + ((int32_t)par_p7 << 7)) >> 4);
+    press_comp = (int32_t)(press_comp) + ((var1 + var2 + var3 +
+		((int32_t)par_p7 << 7)) >> 4);
 
     return press_comp;
 }
@@ -196,19 +193,14 @@ to_percent(uint8_t raw_data[2])
     int32_t temp_scaled = (int32_t)sensor_data.current_temp;
     int32_t var1 = (int32_t)hum_adc - (int32_t)((int32_t)par_h1 << 4) -
 	(((temp_scaled * (int32_t)par_h3) / ((int32_t)100)) >> 1);
-    int32_t var2 =
-	((int32_t)par_h2 * (((temp_scaled * (int32_t)par_h4) / ((int32_t)100)) +
-	    (((temp_scaled * ((temp_scaled * (int32_t)par_h5) /
-			      ((int32_t)100))) >>
-	      6) /
-	     ((int32_t)100)) +
-	    ((int32_t)(1 << 14)))) >>
-	10;
+    int32_t var2 = ((int32_t)par_h2 * (((temp_scaled * (int32_t)par_h4) /
+		    ((int32_t)100)) + (((temp_scaled * ((temp_scaled *
+				    (int32_t)par_h5) / ((int32_t)100))) >> 6) /
+		    ((int32_t)100)) + ((int32_t)(1 << 14)))) >> 10;
 
     int32_t var3 = var1 * var2;
-    int32_t var4 = (((int32_t)par_h6 << 7) +
-	    ((temp_scaled * (int32_t)par_h7) / ((int32_t)100))) >>
-	4;
+    int32_t var4 = (((int32_t)par_h6 << 7) + ((temp_scaled * (int32_t)par_h7) /
+		((int32_t)100))) >> 4;
 
     int32_t var5 = ((var3 >> 14) * (var3 >> 14)) >> 10;
     int32_t var6 = (var4 * var5) >> 1;
@@ -244,8 +236,7 @@ to_celsius(uint8_t raw_data[3])
     /* Perform conversion */
     int32_t var1 = ((int32_t)temp_adc >> 3) - ((int32_t)par_t1 << 1);
     int32_t var2 = (var1 * (int32_t)par_t2) >> 11;
-    int32_t var3 =
-	((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
+    int32_t var3 = ((((var1 >> 1) * (var1 >> 1)) >> 12) * ((int32_t)par_t3 << 4)) >> 14;
     sensor_data.t_fine = var2 + var3;
 
     return ((sensor_data.t_fine * 5) + 128) >> 8;
