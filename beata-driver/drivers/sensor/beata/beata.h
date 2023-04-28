@@ -42,9 +42,9 @@ struct beata_config
 
 struct beata_data
 {
+	int32_t		temp_celsius;
 	int32_t		humidity;
 	int32_t		press;
-	int32_t		temp_celsius;
 	uint16_t	sound_level;
 	uint8_t		has_motion;
 };

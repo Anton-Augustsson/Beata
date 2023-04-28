@@ -10,18 +10,46 @@ beata_init(const struct device *dev)
 static int
 beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	struct beata_data *data = dev->data;
-	struct beata_config *config = dev->config;
-	i2c_burst_read_dt(
-		&config->i2c, SENSOR_NODE_HUM, &data->humidity, 4);
-	i2c_burst_read_dt(
-		&config->i2c, SENSOR_NODE_TEMP, &data->temp_celsius, 4);
-	i2c_burst_read_dt(
-		&config->i2c, SENSOR_NODE_PRESS, &data->press, 4);
-	i2c_burst_read_dt(
-		&config->i2c, SENSOR_NODE_SOUND, &data->sound_level, 2);
-	i2c_burst_read_dt(
-		&config->i2c, SENSOR_NODE_MOTION, &data->has_motion, 1);
+	const struct beata_config *config = dev->config;
+	uint8_t temperature[4], humidity[4], press[4], sound_level[2], has_motion;
+
+	if (i2c_burst_read_dt(
+		&config->i2c, SENSOR_NODE_TEMP, temperature, 4))
+		return EIO;
+
+	if (i2c_burst_read_dt(
+		&config->i2c, SENSOR_NODE_HUM, humidity, 4))
+		return EIO;
+
+	if (i2c_burst_read_dt(
+		&config->i2c, SENSOR_NODE_PRESS, press, 4))
+		return EIO;
+
+	if (i2c_burst_read_dt(
+		&config->i2c, SENSOR_NODE_SOUND, sound_level, 2))
+		return EIO;
+
+	if (i2c_burst_read_dt(
+		&config->i2c, SENSOR_NODE_MOTION, &has_motion, 1))
+		return EIO;
+
+	((struct beata_data *)dev->data)->temp_celsius 	= temperature[3] << 24 |
+													  temperature[2] << 16 |
+													  temperature[1] << 8 |
+													  temperature[0];
+	((struct beata_data *)dev->data)->humidity 		= humidity[3] << 24 |
+													  humidity[2] << 16 |
+													  humidity[1] << 8 |
+													  humidity[0];
+	((struct beata_data *)dev->data)->press 		= press[3] << 24 |
+													  press[2] << 16 |
+													  press[1] << 8 |
+													  press[0];
+	((struct beata_data *)dev->data)->sound_level 	= sound_level[1] << 8 |
+													  sound_level[0];
+	((struct beata_data *)dev->data)->has_motion 	= has_motion; // already uint8_t
+
+	return 0;
 }
 
 static int
@@ -29,31 +57,23 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
 {
     struct beata_data *data = dev->data;
 
-    switch (chan)
-    {
-		case SENSOR_CHAN_AMBIENT_TEMP:
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 			val->val1 = data->temp_celsius / 100;
 			val->val2 = data->temp_celsius % 100;
-			break;
-		case SENSOR_CHAN_HUMIDITY:
+	} else if (SENSOR_CHAN_HUMIDITY) {
 			val->val1 = data->humidity / 1000;
 			val->val2 = data->humidity % 1000;
-			break;
-		case SENSOR_CHAN_PRESS:
+	} else if (SENSOR_CHAN_PRESS) {
 			val->val1 = data->press / 1000;
 			val->val2 = data->press % 1000;
-			break;
-		case SENSOR_CHAN_IR:
+	} else if (SENSOR_CHAN_IR) {
 			val->val1 = data->has_motion;
 			val->val2 = 0;
-			break;
-		case SENSOR_CHAN_PROX:
+	} else if (SENSOR_CHAN_PROX) {
 			val->val1 = data->sound_level / 100;
 			val->val2 = data->sound_level % 100;
-			break;
-		default:
-			return -EINVAL;
-    }
+	} else
+		return -EINVAL;
 
     return 0;
 }
