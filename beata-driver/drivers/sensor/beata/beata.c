@@ -33,7 +33,7 @@ beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
     memcpy(&data->humidity, humidity, sizeof(data->humidity));
     memcpy(&data->press, press, sizeof(data->press));
     memcpy(&data->sound_level, sound_level, sizeof(data->sound_level));
-    memcpy(&data->has_motion, has_motion, sizeof(data->has_motion));
+    memcpy(&data->has_motion, &has_motion, sizeof(data->has_motion));
 
     return 0;
 }
