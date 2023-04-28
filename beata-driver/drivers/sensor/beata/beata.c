@@ -10,6 +10,7 @@ beata_init(const struct device *dev)
 static int
 beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+    struct beata_data *data = dev->data;
     const struct beata_config *config = dev->config;
     uint8_t temperature[4], humidity[4], press[4], sound_level[2], has_motion;
 
@@ -28,11 +29,11 @@ beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
     if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_MOTION, &has_motion, 1))
 	return EIO;
 
-    ((struct beata_data *)dev->data)->temp_celsius = temperature[3] << 24 | temperature[2] << 16 | temperature[1] << 8 | temperature[0];
-    ((struct beata_data *)dev->data)->humidity = humidity[3] << 24 | humidity[2] << 16 | humidity[1] << 8 | humidity[0];
-    ((struct beata_data *)dev->data)->press = press[3] << 24 | press[2] << 16 | press[1] << 8 | press[0];
-    ((struct beata_data *)dev->data)->sound_level = sound_level[1] << 8 | sound_level[0];
-    ((struct beata_data *)dev->data)->has_motion = has_motion; // already uint8_t
+    memcpy(&data->temp_celsius, temperature, sizeof(data->temp_celsius));
+    memcpy(&data->humidity, humidity, sizeof(data->humidity));
+    memcpy(&data->press, press, sizeof(data->press));
+    memcpy(&data->sound_level, sound_level, sizeof(data->sound_level));
+    memcpy(&data->has_motion, has_motion, sizeof(data->has_motion));
 
     return 0;
 }
