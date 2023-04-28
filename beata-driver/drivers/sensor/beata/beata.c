@@ -78,13 +78,6 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
     return 0;
 }
 
-// static int
-// beata_attr_set(const struct device *dev, enum sensor_channel chan,
-//     enum sensor_attribute attr, const struct sensor_value *val)
-// {
-//     return 1; // TODO:
-// }
-
 static const struct sensor_driver_api beata_api = {
 	.sample_fetch   = beata_sample_fetch,
 	.channel_get    = beata_channel_get,
