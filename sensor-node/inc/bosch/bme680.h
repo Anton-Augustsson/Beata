@@ -17,7 +17,8 @@
 #include "pico/stdlib.h"
 #endif
 
-typedef struct bme680_rslt {
+typedef struct bme680_rslt
+{
     int32_t data;
     error_t error;
 } bme680_rslt_t;

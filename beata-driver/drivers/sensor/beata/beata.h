@@ -30,23 +30,18 @@ LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
 #define SENSOR_NODE_MOTION  0x0E
 #define SENSOR_NODE_CONFIG  0x0F
 
-/* Additional sensor channel(s) */
-enum beata_channel {
-	SENSOR_CHAN_SOUND = SENSOR_CHAN_PRIV_START,
-};
-
 struct beata_config
 {
-	struct i2c_dt_spec i2c;
+    struct i2c_dt_spec i2c;
 };
 
 struct beata_data
 {
-	int32_t		temp_celsius;
-	int32_t		humidity;
-	int32_t		press;
-	uint16_t	sound_level;
-	uint8_t		has_motion;
+    int32_t temp_celsius;
+    int32_t humidity;
+    int32_t press;
+    uint16_t sound_level;
+    uint8_t has_motion;
 };
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BEATA__ */

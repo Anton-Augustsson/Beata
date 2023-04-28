@@ -12,7 +12,8 @@
 #include "hardware/gpio.h"
 #endif
 
-typedef struct dfr0034_rslt {
+typedef struct dfr0034_rslt
+{
     uint16_t data;
     error_t error;
 } dfr0034_rslt_t;
