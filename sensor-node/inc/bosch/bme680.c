@@ -275,8 +275,8 @@ bme680_init()
     /* Pressure:    16x oversampling */
     if (bme680_write(BME680_CTRL_HUM, BME680_HUM_SETTINGS) == ERROR)
     {
-	printf("BME680_CONFIG_ERROR: Could not write humidity settings to
-		bme680\n");
+	printf("BME680_CONFIG_ERROR: Could not write humidity settings to "
+		"bme680\n");
 	return ERROR;
     }
 
