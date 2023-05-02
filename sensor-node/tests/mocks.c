@@ -82,15 +82,12 @@ struct reg_value3 regs_values3[REGS_VALUES3_SIZE] = {
 struct values get_value1(int reg) {
     struct values res;
     for (int i = 0; i < REGS_VALUES1_SIZE; i++) {
-        printf("reg: %d, reg_lock: %d\n", regs_values1[i].reg, reg);
         if (regs_values1[i].reg == reg) {
             res.value = regs_values1[i].value[reg_mode];
-            printf("(1) found it\n");
             res.success = 1;
             return res;
         }
     }
-    printf("(1) could not find it\n");
     res.value = regs_values1[0].value[reg_mode]; //ERROR_VALUE3;
     res.success = -1;
     return res;
@@ -100,13 +97,11 @@ struct values get_value2(int reg) {
     struct values res;
     for (int i = 0; i < REGS_VALUES2_SIZE; i++) {
         if (regs_values2[i].reg == reg) {
-            printf("(2) found it\n");
             res.value = regs_values2[i].value[reg_mode];
             res.success = 1;
             return res;
         }
     }
-    printf("(2) could not find it\n");
     res.value = regs_values2[0].value[reg_mode]; //ERROR_VALUE3;
     res.success = -1;
     return res;
@@ -116,13 +111,11 @@ struct values get_value3(int reg) {
     struct values res;
     for (int i = 0; i < REGS_VALUES3_SIZE; i++) {
         if (regs_values3[i].reg == reg) {
-            printf("(3) found it");
             res.value = regs_values3[i].value[reg_mode];
             res.success = 1;
             return res;
         }
     }
-    printf("(3) could not find it");
     res.value = regs_values3[0].value[reg_mode]; //ERROR_VALUE3;
     res.success = -1;
     return res;
