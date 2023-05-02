@@ -112,8 +112,19 @@ int clean_suite_bme680(void)
 int test_read_temp(void) 
 {
   printf("-Test of reading temperature value of bme680\n");
+  int res = 0;
+  int tests = 0;
+
   set_reg_mode(Hot);
-  return assert_read_temp(2654);
+  res += assert_read_temp(8500); tests++;
+
+  set_reg_mode(Cold);
+  res += assert_read_temp(-4000); tests++;
+
+  set_reg_mode(NormalReg); // Have to have it here
+  res += assert_read_temp(2654); tests++;
+
+  return (res == tests ? 1 : 0);
 }
 
 /* 
@@ -123,7 +134,8 @@ int test_read_humidity(void)
 {
   printf("-Test of reading humidity value of bme680\n");
   set_reg_mode(Humid);
-  return assert_read_humidity(-224735);
+  int res = assert_read_humidity(-224735);
+  return res;
 }
 
 /* 
@@ -133,7 +145,8 @@ int test_read_press(void)
 {
   printf("-Test of reading pressure value of bme680\n");
   set_reg_mode(HighPress);
-  return assert_read_pressure(94625);
+  int res = assert_read_pressure(94625);
+  return res;
 }
 
 

@@ -24,6 +24,7 @@ int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*
 int adc_select_input(int adc_channel);
 uint16_t adc_read();
 
+// TODO: for can't read and can't write
 enum reg_mode_t{Hot = 0, Cold = 1, Humid = 2, Dry = 3, HighPress = 4, 
                 LowPress = 5, NormalReg = 6, InvalidReg = 7};
 enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3, 

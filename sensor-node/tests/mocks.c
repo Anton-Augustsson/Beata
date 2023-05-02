@@ -102,7 +102,7 @@ struct reg_value2 regs_values2[REGS_VALUES2_SIZE] = {
  * Hot, Cold, Humid, Dry, HighPress, LowPress, NormalReg, InvalidReg
  */
 struct reg_value3 regs_values3[REGS_VALUES3_SIZE] = {
-    (struct reg_value3){BME680_TEMP_ADC_MSB, {{122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}}},
+    (struct reg_value3){BME680_TEMP_ADC_MSB, {{167, 185, 254}, {70, 250, 0}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}}},
     (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}}
 };
      
