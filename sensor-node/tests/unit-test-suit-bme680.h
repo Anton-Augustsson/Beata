@@ -46,13 +46,13 @@ int test_read_temp(void)
   bme680_rslt_t temp_celsius = bme680_read_temp();
   if (temp_celsius.error == ERROR)
   {
-      printf("---BME680_ERROR: Could not fetch temperature.");
+      printf("---BME680_ERROR: Could not fetch temperature.\n");
       return 0;
   }
 
   if (temp_celsius.data != 2654)
   {
-    printf("---BME680_ERROR: Wrong temp");
+    printf("---BME680_ERROR: Wrong temp (expected 2654 but got %d)\n", temp_celsius.data);
     return 0;
   }
 
@@ -98,13 +98,13 @@ int test_read_press(void)
   bme680_rslt_t press = bme680_read_press();
   if (press.error == ERROR)
   {
-    printf("---BME680_ERROR: Could not fetch pressure.");
+    printf("---BME680_ERROR: Could not fetch pressure.\n");
     return 0;
   }
 
   if (press.data != 94625)
   {
-    printf("---BME680_ERROR: Wrong press");
+    printf("---BME680_ERROR: Wrong press (expected 94625 but got %d)\n", press.data);
     return 0;
   }
 
