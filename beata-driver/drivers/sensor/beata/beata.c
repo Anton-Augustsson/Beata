@@ -10,24 +10,21 @@ beata_init(const struct device *dev)
 static int
 beata_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+    int ret;
     struct beata_data *data = dev->data;
     const struct beata_config *config = dev->config;
     uint8_t temperature[4], humidity[4], press[4], sound_level[2], has_motion;
 
-    if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_TEMP, temperature, 4))
-        return EIO;
-
-    if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_HUM, humidity, 4))
-        return EIO;
-
-    if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_PRESS, press, 4))
-        return EIO;
-
-    if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_SOUND, sound_level, 2))
-        return EIO;
-
-    if (i2c_burst_read_dt(&config->i2c, SENSOR_NODE_MOTION, &has_motion, 1))
-        return EIO;
+    if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_NODE_TEMP, temperature, 4)) < 0)
+        return ret;
+    if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_NODE_HUM, humidity, 4)) < 0)
+        return ret;
+    if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_NODE_PRESS, press, 4)) < 0)
+        return ret;
+    if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_NODE_SOUND, sound_level, 2)) < 0)
+        return ret;
+    if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_NODE_MOTION, &has_motion, 1)) < 0)
+        return ret;
 
     memcpy(&data->temp_celsius, temperature, sizeof(data->temp_celsius));
     memcpy(&data->humidity, humidity, sizeof(data->humidity));
@@ -59,15 +56,87 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
         val->val1 = data->sound_level / 100;
         val->val2 = data->sound_level % 100;
     } else {
-        return EINVAL;
+        printk("Sensor node does not support this channel.");
+        return -ENOTSUP;
     }
 
+    return 0;
+}
+
+static int
+beata_attr_set(const struct device *dev, enum sensor_channel chan,
+               enum sensor_attribute attr, const struct sensor_value *val)
+{
+    int ret;
+    const struct beata_config *config = dev->config;
+
+	if (chan != SENSOR_CHAN_ALL)
+	{
+        printk("attr_set() not supported on this channel.");
+		return -ENOTSUP;
+	}
+
+    if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY)
+	{
+        if (val->val1 <= 0) {
+            printk("Invalid sampling frequency for sensor node, must be > 0.");
+            return -EINVAL;
+        }
+
+        if ((ret = i2c_burst_write_dt(&config->i2c, SENSOR_SAMPLING_FREQUENCY,
+            (uint8_t*)(&val->val1), 2)) < 0)
+            return ret;
+	}
+    else if (attr == SENSOR_ATTR_FEATURE_MASK)
+    {
+        if ((ret = i2c_burst_write_dt(&config->i2c, SENSOR_DISABLED_SENSORS,
+            (uint8_t*)(&val->val1), 1)) < 0)
+            return ret;
+    }
+    else
+    {
+        printk("attr_set() does not support this attribute.");
+        return -ENOTSUP;
+    }
+
+	return 0;
+}
+
+static int
+beata_attr_get(const struct device *dev, enum sensor_channel chan,
+               enum sensor_attribute attr, struct sensor_value *val)
+{
+    const struct beata_config *config = dev->config;
+    int ret;
+    uint8_t buf[2];
+
+    if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY)
+	{
+        if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_SAMPLING_FREQUENCY, buf, 2)) < 0)
+            return ret;
+        memcpy(&val->val1, buf, 2);
+	}
+    else if (attr == SENSOR_ATTR_FEATURE_MASK)
+    {
+        if ((ret = i2c_burst_read_dt(&config->i2c, SENSOR_DISABLED_SENSORS, buf, 1)) < 0)
+            return ret;
+        memcpy(&val->val1, buf, 1);
+    }
+    else
+    {
+        printk("Sensor node does not support this attribute.");
+        return -ENOTSUP;
+    }
+
+    val->val2 = 0;
     return 0;
 }
 
 static const struct sensor_driver_api beata_api = {
     .sample_fetch   = beata_sample_fetch,
     .channel_get    = beata_channel_get,
+    .attr_set       = beata_attr_set,
+    .attr_get       = beata_attr_get,
 };
 
 #define BEATA_INIT(inst)						             \

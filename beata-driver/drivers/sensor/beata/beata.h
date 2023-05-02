@@ -21,14 +21,23 @@
 
 LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
 
-/* data registers */
+/* Data registers */
 #define SENSOR_NODE_ADDR    0x17
 #define SENSOR_NODE_TEMP    0x00
 #define SENSOR_NODE_HUM     0x04
 #define SENSOR_NODE_PRESS   0x08
 #define SENSOR_NODE_SOUND   0x0C
 #define SENSOR_NODE_MOTION  0x0E
-#define SENSOR_NODE_CONFIG  0x0F
+
+/* Config registers */
+#define SENSOR_SAMPLING_FREQUENCY 0x0F
+
+/* 1 register for disabling respective sensor.
+ * bit 0:   CLIMATE
+ * bit 1:   SOUND
+ * bit 2:   MOTION
+ * bit >2:  discarded */
+#define SENSOR_DISABLED_SENSORS   0x11
 
 struct beata_config
 {
