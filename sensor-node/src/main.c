@@ -33,8 +33,6 @@
 #define SENSOR_QUERY_PERIOD_MS 3000
 #define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
 
-/* Implement a memory. The master first writes the memory address, followed by
-   the data.*/
 static struct
 {
     uint8_t mem[256];
@@ -171,8 +169,9 @@ main()
     uint16_t sampling_time = 0;
     for (;;)
     {
-        printf("Starting conversion...\n");
+        printf("Reading sensors...\n");
         read_all_sensor_values();
+        // TODO: This operation is not safe
         memcpy(&sampling_time, &context.mem[SENSOR_SAMPLING_FREQUENCY], sizeof(uint16_t));
         sleep_ms(sampling_time);
     }

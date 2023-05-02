@@ -4,6 +4,7 @@ static int
 beata_init(const struct device *dev)
 {
     printk("\n\nInitialising Beata.\n");
+    // TODO: Check that connected device is a sensor node.
     return 0;
 }
 
