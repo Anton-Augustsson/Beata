@@ -103,16 +103,27 @@ struct reg_value2 regs_values2[REGS_VALUES2_SIZE] = {
  */
 struct reg_value3 regs_values3[REGS_VALUES3_SIZE] = {
     (struct reg_value3){BME680_TEMP_ADC_MSB, {{167, 185, 254}, {70, 250, 0}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}}},
-    (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {0, 0, 0}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}}
+    (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {0, 0, 0}, {3, 166, 0}, {65, 154, 224}, {65, 154, 224}}}
 };
      
-void set_reg_press_hot(int value1, int value2, int value3) {
-    if (value1 != 0)
-        regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, 0, 0}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
-    if (value1 != 0, value2 != 0)
-        regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, 0}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
-    if (value1 != 0, value2 != 0, value3 != 0)
-        regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, value3}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
+void set_reg_press(int value1, int value2, int value3, int mode) {
+    if (mode == 0) {
+        if (value1 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, 0, 0}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
+        if (value1 != 0, value2 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, 0}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
+        if (value1 != 0, value2 != 0, value3 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, value3}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}};
+    }
+    if (mode == 1) {
+        if (value1 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, 0, 0}, {65, 154, 224}, {65, 154, 224}}};
+        if (value1 != 0, value2 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, 0}, {65, 154, 224}, {65, 154, 224}}};
+        if (value1 != 0, value2 != 0, value3 != 0)
+            regs_values3[1] = (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {value1, value2, value3}, {65, 154, 224}, {65, 154, 224}}};
+    }
+    
 }
 
 void set_reg_mode(enum reg_mode_t new_mode) {
