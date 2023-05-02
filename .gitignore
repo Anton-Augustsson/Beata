@@ -152,6 +152,7 @@ flycheck_*.el
 .DS_Store
 .AppleDouble
 .LSOverride
+.clangd
 
 # Icon must end with two \r
 Icon
