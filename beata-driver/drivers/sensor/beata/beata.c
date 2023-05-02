@@ -70,13 +70,15 @@ static const struct sensor_driver_api beata_api = {
     .channel_get    = beata_channel_get,
 };
 
-#define BEATA_INIT(inst)\
-    static struct beata_data beata_data_##inst;\
+#define BEATA_INIT(inst)						             \
+    static struct beata_data beata_data_##inst;	             \
     static const struct beata_config beata_config_##inst = { \
-        .i2c = I2C_DT_SPEC_INST_GET(inst),\
-    };\
-    DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,\ &beata_data_##inst,\
-            &beata_config_##inst,\ POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+        .i2c = I2C_DT_SPEC_INST_GET(inst),					 \
+    };													     \
+    DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,			 \
+            &beata_data_##inst,			                     \
+            &beata_config_##inst,						     \
+            POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,        \
             &beata_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BEATA_INIT)
