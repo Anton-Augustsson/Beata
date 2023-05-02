@@ -13,34 +13,39 @@
 #define STACK_SIZE 500
 #define ERROR_MARGIN 200
 #define BUTTON_DEBOUNCE_DELAY 50
+#define BUTTON_HANDLE_DELAY 1
 
+/* Synchronization parameters */
+K_MUTEX_DEFINE(config_lock);
 K_SEM_DEFINE(climate_btn_sem, 0, 1);
 K_SEM_DEFINE(sound_btn_sem, 0, 1);
 K_SEM_DEFINE(motion_btn_sem, 0, 1);
 
 // Global variables used
-uint8_t update_conf = 0;
-unsigned long button_time = 0;
+volatile uint8_t update_conf = 0;
+static struct sensor_value config_values;
+static struct sensor_value sampling_frequency = {10, 0};
+static unsigned long button_time = 0;
 
-struct gpio_dt_spec climate_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
-struct gpio_dt_spec sound_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
-struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
+static struct gpio_dt_spec climate_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static struct gpio_dt_spec sound_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
+static struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
 static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_cb_data;
 
 void
 button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-		if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY)
-		{
-			button_time = k_uptime_get_32();
-			// TODO: make sure pins actually checks for the GPIO pinout
-			if (pins == 20)
-				k_sem_give(&climate_btn_sem);
-			else if (pins == 21)
-				k_sem_give(&sound_btn_sem);
-			else if (pins == 22)
-				k_sem_give(&motion_btn_sem);
-		}
+	if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY)
+	{
+		button_time = k_uptime_get_32();
+		// TODO: make sure pins actually checks for the GPIO pinout
+		if (pins == 20)
+			k_sem_give(&climate_btn_sem);
+		else if (pins == 21)
+			k_sem_give(&sound_btn_sem);
+		else if (pins == 22)
+			k_sem_give(&motion_btn_sem);
+	}
 }
 
 void
@@ -63,12 +68,28 @@ button_task() {
 
 	for (;;)
 	{
-		if (k_sem_take(&climate_btn_sem, K_NO_WAIT) ||
-			k_sem_take(&sound_btn_sem, K_NO_WAIT) ||
-			k_sem_take(&motion_btn_sem, K_NO_WAIT))
-		{
+		if (k_sem_take(&climate_btn_sem, K_NO_WAIT))
+        {
+			k_mutex_lock(&config_lock, K_FOREVER);
+			config_values.val1 |= DISABLE_CLIMATE;
 			update_conf = 1;
+			k_mutex_unlock(&config_lock);
+        }
+		else if(k_sem_take(&sound_btn_sem, K_NO_WAIT))
+		{
+			k_mutex_lock(&config_lock, K_FOREVER);
+			config_values.val1 |= DISABLE_SOUND;
+			update_conf = 1;
+			k_mutex_unlock(&config_lock);
 		}
+		else if (k_sem_take(&motion_btn_sem, K_NO_WAIT))
+		{
+			k_mutex_lock(&config_lock, K_FOREVER);
+			config_values.val1 |= DISABLE_MOTION;
+			update_conf = 1;
+			k_mutex_unlock(&config_lock);
+		}
+        k_msleep(BUTTON_HANDLE_DELAY);
 	}
 }
 
@@ -77,7 +98,6 @@ main()
 {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
     struct sensor_value temperature, humidity, pressure, motion, sound;
-	struct sensor_value sampling_frequency, config_values;
 
     while (!device_is_ready(dev))
     {
