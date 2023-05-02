@@ -14,6 +14,7 @@
 
 static int i2c_default;
 static const int i2c0 = 0;
+static const int i2c1 = 1;
 
 int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option);
 int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option);
