@@ -33,4 +33,6 @@ enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3,
 void set_reg_mode(enum reg_mode_t new_mode);
 void set_adc_mode(enum adc_mode_t new_mode);
 
+void set_reg_press_hot(int value1, int value2, int value3);
+
 #endif /* _MOCKS_H_ */

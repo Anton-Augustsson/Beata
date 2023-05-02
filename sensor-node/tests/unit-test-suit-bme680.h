@@ -135,8 +135,41 @@ int test_read_humidity(void)
   printf("-Test of reading humidity value of bme680\n");
   set_reg_mode(Humid);
   int res = assert_read_humidity(-224735);
+ 
   return res;
 }
+
+int find_press_parameters() {
+  set_reg_mode(HighPress);
+  int could_use[255];
+
+  for (int i = 0; i < 255; i++) {
+    could_use[i] = 0;
+  }
+  
+  for (int i = 0; i < 255; i++) {
+    set_reg_press_hot(i, 0, 0);
+    bme680_rslt_t press = bme680_read_press();
+    if (96000 < press.data && 118000 > press.data) {
+      for (int j = 0; j < 255; j++) {
+        set_reg_press_hot(i, j, 0);
+        bme680_rslt_t press = bme680_read_press();
+        if (96450 < press.data && 110000 > press.data) {
+          for (int l = 0; l < 255; l++) {
+            set_reg_press_hot(i, j, l);
+            bme680_rslt_t press = bme680_read_press();
+            if (96485 < press.data && 110000 > press.data) {
+              printf("Could use (%d, %d, %d)\n", i, j, l);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 
 /* 
  * Read the gas from bme680
@@ -144,9 +177,21 @@ int test_read_humidity(void)
 int test_read_press(void) 
 {
   printf("-Test of reading pressure value of bme680\n");
+  int res = 0;
+  int tests = 0;
+
+  //find_press_parameters();
+
   set_reg_mode(HighPress);
-  int res = assert_read_pressure(94625);
-  return res;
+  res += assert_read_pressure(96486); tests++;
+
+  set_reg_mode(LowPress);
+  res += assert_read_pressure(30000); tests++;
+
+  set_reg_mode(NormalReg); // Have to have it here
+  res += assert_read_pressure(94625); tests++;
+
+  return (res == tests ? 1 : 0);
 }
 
 
