@@ -44,7 +44,7 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
     struct beata_data *data = dev->data;
 
     if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
-	val->val1 = data->temp_celsius / 100;
+    val->val1 = data->temp_celsius / 100;
 	val->val2 = data->temp_celsius % 100;
     } else if (SENSOR_CHAN_HUMIDITY) {
 	val->val1 = data->humidity / 1000;
