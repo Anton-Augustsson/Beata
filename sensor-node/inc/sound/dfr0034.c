@@ -5,7 +5,7 @@
 
 static volatile bool circuit_stable = false;
 
-static int64_t
+    static int64_t
 circuit_stable_callback(alarm_id_t id, void *user_data)
 {
     printf("DFR0034: Circuit is now stable\n");
@@ -26,7 +26,7 @@ dfr0034_rslt_t
 dfr0034_read_sound()
 {
     if (!circuit_stable)
-	return (dfr0034_rslt_t){.error = NOT_READY};
+        return (dfr0034_rslt_t){.error = NOT_READY};
 
     adc_select_input(DFR0034_ADC_CHANNEL);
     uint16_t value = adc_read();
@@ -34,7 +34,7 @@ dfr0034_read_sound()
     /* TODO: Convert to dB */
     return (dfr0034_rslt_t)
     {
-	.error = SUCCESS,
-	.data = value
+        .error = SUCCESS,
+        .data = value
     };
 }

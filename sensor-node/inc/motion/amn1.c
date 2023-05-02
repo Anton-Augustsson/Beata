@@ -27,14 +27,14 @@ amn1_rslt_t
 amn1_read_motion()
 {
     if (!circuit_stable)
-	return (amn1_rslt_t){.error = NOT_READY};
+        return (amn1_rslt_t){.error = NOT_READY};
 
     adc_select_input(AMN1_ADC_CHANNEL);
     uint16_t value = adc_read();
 
     return (amn1_rslt_t)
     {
-	.error = SUCCESS,
-	.data = (AMN1_MOTION_THRESHOLD_V < (value * ADC_CONVERSION_FACTOR))
+        .error = SUCCESS,
+        .data = (AMN1_MOTION_THRESHOLD_V < (value * ADC_CONVERSION_FACTOR))
     };
 }
