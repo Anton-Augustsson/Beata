@@ -78,7 +78,7 @@ struct reg_value3 regs_values3[REGS_VALUES3_SIZE] = {
     (struct reg_value3){BME680_TEMP_ADC_MSB, {{122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}, {122, 125, 144}}},
     (struct reg_value3){BME680_PRESS_ADC_MSB, {{65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}, {65, 154, 224}}}
 };
-     
+
 struct values get_value1(int reg) {
     struct values res;
     for (int i = 0; i < REGS_VALUES1_SIZE; i++) {
@@ -125,12 +125,12 @@ int set_buf(uint8_t *buf, size_t len, struct values value){
     if (value.success != 1) {
         return -1;
     }
-    
+
     for (int i = 0; i < len; i++)
     {
         buf[i] = value.value[i];
     }
-    
+
     return 1;
 }
 
@@ -143,14 +143,14 @@ int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option)
 
 int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option)
 {
-    switch(len){    
+    switch(len){
         case 1:
             return set_buf(buf, len, get_value1(reg_read));
         case 2:
             return set_buf(buf, len, get_value2(reg_read));
         case 3:
             return set_buf(buf, len, get_value3(reg_read));
-        default: // will go to default if reg_read == -1 
+        default: // will go to default if reg_read == -1
             printf("ERROR: Reading a unknown register (%d).\n", reg_read);
             return -1;
     }
@@ -172,17 +172,17 @@ int adc_select_input(int adc_channel)
 {
     switch (adc_channel)
     {
-    case AMN1_ADC_CHANNEL:
-        channel = AMN1_ADC_CHANNEL;
-        return 1;
-    
-    case DFR0034_ADC_CHANNEL:
-        channel = DFR0034_ADC_CHANNEL;
-        return 1;
+        case AMN1_ADC_CHANNEL:
+            channel = AMN1_ADC_CHANNEL;
+            return 1;
 
-    default:
-        printf("ERROR: unknown adc channel (%d).\n", adc_channel);
-        return -1;
+        case DFR0034_ADC_CHANNEL:
+            channel = DFR0034_ADC_CHANNEL;
+            return 1;
+
+        default:
+            printf("ERROR: unknown adc channel (%d).\n", adc_channel);
+            return -1;
     }
 }
 
@@ -190,18 +190,18 @@ uint16_t adc_read()
 {
     switch (channel)
     {
-    case AMN1_ADC_CHANNEL:
-        channel = -1;
-        return 4/ADC_CONVERSION_FACTOR;
-    
-    case DFR0034_ADC_CHANNEL:
-        channel = -1;
-        return 100;
+        case AMN1_ADC_CHANNEL:
+            channel = -1;
+            return 4/ADC_CONVERSION_FACTOR;
 
-    default:
-        printf("ERROR: reading a unknown adc channel (%d).\n", channel);
-        channel = -1;
-        return 0;
+        case DFR0034_ADC_CHANNEL:
+            channel = -1;
+            return 100;
+
+        default:
+            printf("ERROR: reading a unknown adc channel (%d).\n", channel);
+            channel = -1;
+            return 0;
     }
 }
 
