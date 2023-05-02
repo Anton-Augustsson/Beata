@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 # Select our board
 set(BOARD rpi_pico)
+set(ZEPHYR_EXTRA_MODULES ${CMAKE_CURRENT_SOURCE_DIR}/../beata-driver)
 
 # Find/Select cmake package 'Zephyr'
 find_package(Zephyr)
@@ -11,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # For using west flash with picoprobe
 set(OPENOCD "openocd")
+set(DRPI_PICO_DEBUG_ADAPTER "picoprobe")
 set(OPENOCD_DEFAULT_PATH "/usr/local/share/openocd/scripts")
 
 # Define project name

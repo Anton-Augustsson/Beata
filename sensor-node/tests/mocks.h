@@ -13,6 +13,8 @@
 #define GPIO_FUNC_I2C 1
 
 static int i2c_default;
+static const int i2c0 = 0;
+static const int i2c1 = 1;
 
 int i2c_write_blocking(int i2c, int addr, uint8_t *reg, size_t len, bool option);
 int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option);
@@ -28,5 +30,9 @@ enum reg_mode_t{Hot = 0, Cold, Humid = 1, Dry = 2, HighPress = 3,
               LowPress = 4, NormalReg = 5, InvalidReg = 6};
 enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3, 
               NormalAdc = 4, InvalidAdc = 5};
+
+int i2c_init(int i2c, int i2c_baudrate);
+int gpio_set_function(int i2c_sda_pin, int gpio_func_i2c);
+int gpio_pull_up(int i2c);
 
 #endif /* _MOCKS_H_ */

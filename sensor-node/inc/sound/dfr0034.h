@@ -2,7 +2,6 @@
 #define _DFR0034_H_
 
 #include <stdio.h>
-#include <stdbool.h>
 #include "../common.h"
 
 #ifdef BUILD_TESTS
@@ -13,7 +12,8 @@
 #include "hardware/gpio.h"
 #endif
 
-typedef struct dfr0034_rslt {
+typedef struct dfr0034_rslt
+{
     uint16_t data;
     error_t error;
 } dfr0034_rslt_t;

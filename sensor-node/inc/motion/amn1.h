@@ -2,7 +2,6 @@
 #define _AMN1_H_
 
 #include <stdio.h>
-#include <stdbool.h>
 #include "../common.h"
 
 #ifdef BUILD_TESTS
@@ -13,8 +12,9 @@
 #include "hardware/gpio.h"
 #endif
 
-typedef struct amn1_rslt {
-    bool data;
+typedef struct amn1_rslt
+{
+    uint8_t data;
     error_t error;
 } amn1_rslt_t;
 

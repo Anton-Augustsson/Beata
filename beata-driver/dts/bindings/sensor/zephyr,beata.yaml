@@ -1,0 +1,5 @@
+description: |
+  The Beata sensor is an integrated sensor that measures temperature, pressure,
+  humidity, sound, and motion.
+
+compatible: "zephyr,beata"

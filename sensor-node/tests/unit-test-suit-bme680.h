@@ -4,7 +4,7 @@
 #include "../inc/bosch/bme680.h"
 
 #define TEMP_RESOLUTION 100
-#define HUM_RESOLUTION 100
+#define HUM_RESOLUTION 1000
 #define PRESS_RESOLUTION 1000
 
 
@@ -76,10 +76,9 @@ int test_read_humidity(void)
     return 0;
   }
 
-  // FIXME: wrong humidity, change when it is correct
-  if (humidity.data != -224735)
+  if (humidity.data != 31435)
   {
-    printf("---BME680_ERROR: Wrong humidity (expected -224735 but got %d)\n", humidity.data);
+    printf("---BME680_ERROR: Wrong humidity (expected 31435 but got %d)\n", humidity.data);
     return 0;
   }
 

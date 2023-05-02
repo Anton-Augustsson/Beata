@@ -1,0 +1,5 @@
+config BEATA
+        bool "Beata sensor node"
+        depends on I2C
+        help
+          Enable driver for Beata sensor nodes that allow you to receive sensor value from it.

@@ -1,0 +1,8 @@
+&i2c0 {
+    status = "okay";
+    beata: beata@17 {
+            status = "okay";
+            compatible = "zephyr,beata";
+            reg = <0x17>;
+    };
+};
