@@ -30,7 +30,6 @@
 #define DISABLED_MASK_SOUND (1 << 1)
 #define DISABLED_MASK_MOTION (1 << 2)
 
-#define SENSOR_QUERY_PERIOD_MS 3000
 #define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
 
 static struct

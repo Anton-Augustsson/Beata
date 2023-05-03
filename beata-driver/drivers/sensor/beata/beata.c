@@ -44,16 +44,16 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
     if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
         val->val1 = data->temp_celsius / 100;
         val->val2 = data->temp_celsius % 100;
-    } else if (SENSOR_CHAN_HUMIDITY) {
+    } else if (chan == SENSOR_CHAN_HUMIDITY) {
         val->val1 = data->humidity / 1000;
         val->val2 = data->humidity % 1000;
-    } else if (SENSOR_CHAN_PRESS) {
+    } else if (chan == SENSOR_CHAN_PRESS) {
         val->val1 = data->press / 1000;
         val->val2 = data->press % 1000;
-    } else if (SENSOR_CHAN_IR) {
+    } else if (chan == SENSOR_CHAN_IR) {
         val->val1 = data->has_motion;
         val->val2 = 0;
-    } else if (SENSOR_CHAN_PROX) {
+    } else if (chan == SENSOR_CHAN_PROX) {
         val->val1 = data->sound_level / 100;
         val->val2 = data->sound_level % 100;
     } else {
