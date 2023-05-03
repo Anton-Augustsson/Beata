@@ -5,7 +5,7 @@
 #include "mocks.h"
 
 #define TEMP_RESOLUTION 100
-#define HUM_RESOLUTION 100
+#define HUM_RESOLUTION 1000
 #define PRESS_RESOLUTION 1000
 
 
@@ -133,19 +133,29 @@ int test_read_temp(void)
 int test_read_humidity(void) 
 {
   printf("-Test of reading humidity value of bme680\n");
+  int res = 0;
+  int tests = 0;
+
+  // FIXME: could not find 100% have to settle with 99.994%
   set_reg_mode(Humid);
-  int res = assert_read_humidity(31435);
+  res += assert_read_humidity(99994); tests++;
+
+  set_reg_mode(Dry);
+  res += assert_read_humidity(0); tests++;
  
-  return res;
+  set_reg_mode(NormalReg); // Have to have it here
+  res += assert_read_humidity(31435); tests++;
+
+  return (res == tests ? 1 : 0);
 }
 
-void find_press_parameters(int lower, int upper, int mode) {
-  int could_use[255];
 
-  for (int i = 0; i < 255; i++) {
-    could_use[i] = 0;
-  }
-  
+#ifdef BUILD_FIND_PARAMETERS
+/* 
+ * Try to narrow down the possible register values to find 
+ * the one closes to the limit.
+ */
+void find_press_parameters(int lower, int upper, enum reg_mode_t mode) {
   for (int i = 0; i < 255; i++) {
     set_reg_press(i, 0, 0, mode);
     bme680_rslt_t press = bme680_read_press();
@@ -158,7 +168,7 @@ void find_press_parameters(int lower, int upper, int mode) {
             set_reg_press(i, j, l, mode);
             bme680_rslt_t press = bme680_read_press();
             if (lower < press.data && upper > press.data) {
-              printf("Could use (%d, %d, %d)\n", i, j, l);
+              printf("Reg mode: %d; Could use (%d, %d, %d)\n", mode, i, j, l);
               return;
             }
           }
@@ -167,6 +177,7 @@ void find_press_parameters(int lower, int upper, int mode) {
     }
   }
 }
+#endif 
 
 /* 
  * Read the gas from bme680

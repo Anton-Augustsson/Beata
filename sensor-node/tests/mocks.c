@@ -95,7 +95,7 @@ struct reg_value1 regs_values1[REGS_VALUES1_SIZE] = {
  * Hot, Cold, Humid, Dry, HighPress, LowPress, NormalReg, InvalidReg
  */
 struct reg_value2 regs_values2[REGS_VALUES2_SIZE] = {
-    (struct reg_value2){BME680_HUM_ADC_MSB, {{92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}, {92, 213}}}
+    (struct reg_value2){BME680_HUM_ADC_MSB, {{92, 213}, {92, 213}, {130, 104}, {67, 112}, {92, 213}, {92, 213}, {92, 213}, {92, 213}}}
 };
 
 /* The format for regs_values3 of the reg values are as follows:
