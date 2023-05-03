@@ -6,8 +6,7 @@
 #define AMN1_ADC_CHANNEL 0
 #define DFR0034_ADC_CHANNEL 1
 
-typedef enum sensor_error_t
-{
+typedef enum sensor_error_t {
     SUCCESS,
     ERROR,
     NOT_READY,
