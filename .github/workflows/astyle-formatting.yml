@@ -1,0 +1,36 @@
+name: Astyle
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+    - 'base-station/src/**'
+    - 'base-station/tests/**'
+    - 'beata-driver/drivers/sensor/beata/**'
+    - 'beata-driver/tests/**'
+    - 'sensor-node/inc/**'
+    - 'sensor-node/inc/bosch/**'
+    - 'sensor-node/inc/motion/**'
+    - 'sensor-node/inc/sound/**'
+    - 'sensor-node/src/**'
+    - 'sensor-node/tests/**'
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install astyle
+    - name: Format
+      run: astyle  -A2 -s4 -s -p -xg -H -U -f -xL -xV -xe -k3 -W3 -xb -j -xf -c -n --recursive .c.h
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v4.1.2
+      with:
+        commit_message: Formatted code using astyle
+        branch: ${{ github.head_ref }}
