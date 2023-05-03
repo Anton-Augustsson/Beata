@@ -12,8 +12,7 @@
 #include "hardware/gpio.h"
 #endif
 
-typedef struct amn1_rslt
-{
+typedef struct amn1_rslt {
     uint8_t data;
     error_t error;
 } amn1_rslt_t;

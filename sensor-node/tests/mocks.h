@@ -22,14 +22,16 @@ int i2c_read_blocking(int i2c, int addr, uint8_t *buf, size_t len, bool option);
 typedef unsigned int alarm_id_t;
 
 int adc_gpio_init(int gpio_pin);
-int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void*), uint8_t *null_value, bool option);
+int add_alarm_in_ms(int stability_time_ms, int64_t (*callback)(alarm_id_t, void *), uint8_t *null_value, bool option);
 int adc_select_input(int adc_channel);
 uint16_t adc_read();
 
-enum reg_mode_t{Hot = 0, Cold, Humid = 1, Dry = 2, HighPress = 3,
-    LowPress = 4, NormalReg = 5, InvalidReg = 6};
-enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3,
-    NormalAdc = 4, InvalidAdc = 5};
+enum reg_mode_t {Hot = 0, Cold, Humid = 1, Dry = 2, HighPress = 3,
+                 LowPress = 4, NormalReg = 5, InvalidReg = 6
+                };
+enum adc_mode_t {Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3,
+                 NormalAdc = 4, InvalidAdc = 5
+                };
 
 int i2c_init(int i2c, int i2c_baudrate);
 int gpio_set_function(int i2c_sda_pin, int gpio_func_i2c);
