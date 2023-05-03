@@ -18,19 +18,19 @@
 #define I2C_SLAVE_SCL_PIN 17
 
 /* Memory registers to read/write */
-#define SENSOR_NODE_TEMP 0x00
-#define SENSOR_NODE_HUM 0x04
-#define SENSOR_NODE_PRESS 0x08
-#define SENSOR_NODE_SOUND 0x0C
-#define SENSOR_NODE_MOTION 0x0E
-#define SENSOR_SAMPLING_FREQUENCY 0x0F
-#define SENSOR_DISABLED_SENSORS 0x11
+#define REG_TEMP 0x00
+#define REG_HUM 0x04
+#define REG_PRESS 0x08
+#define REG_SOUND 0x0C
+#define REG_MOTION 0x0E
+#define REG_SAMPLING_FREQUENCY 0x0F
+#define REG_DISABLED_SENSORS 0x11
 
 #define DISABLED_MASK_CLIMATE (1 << 0)
 #define DISABLED_MASK_SOUND (1 << 1)
 #define DISABLED_MASK_MOTION (1 << 2)
 
-#define INIT_RETRY_DELAY_MS (SENSOR_QUERY_PERIOD_MS / 6)
+#define INIT_RETRY_DELAY_MS 1000
 
 static struct
 {
@@ -89,13 +89,13 @@ void
 read_all_sensor_values()
 {
     // Clear memory to ensure that disabled sensors always produce zeros
-    memset(&context.mem[SENSOR_NODE_TEMP], 0, sizeof(int32_t));
-    memset(&context.mem[SENSOR_NODE_HUM], 0, sizeof(int32_t));
-    memset(&context.mem[SENSOR_NODE_PRESS], 0, sizeof(int32_t));
-    memset(&context.mem[SENSOR_NODE_MOTION], 0, sizeof(uint8_t));
-    memset(&context.mem[SENSOR_NODE_SOUND], 0, sizeof(uint16_t));
+    memset(&context.mem[REG_TEMP], 0, sizeof(int32_t));
+    memset(&context.mem[REG_HUM], 0, sizeof(int32_t));
+    memset(&context.mem[REG_PRESS], 0, sizeof(int32_t));
+    memset(&context.mem[REG_MOTION], 0, sizeof(uint8_t));
+    memset(&context.mem[REG_SOUND], 0, sizeof(uint16_t));
 
-    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_CLIMATE))
+    if (!(context.mem[REG_DISABLED_SENSORS] & DISABLED_MASK_CLIMATE))
     {
         bme680_rslt_t temp_celsius = bme680_read_temp();
         if (temp_celsius.error == ERROR)
@@ -109,27 +109,27 @@ read_all_sensor_values()
         if (press.error == ERROR)
             printf("BME680_ERROR: Could not fetch pressure.");
 
-        memcpy(&context.mem[SENSOR_NODE_TEMP], &temp_celsius.data, sizeof(int32_t));
-        memcpy(&context.mem[SENSOR_NODE_HUM], &humidity.data, sizeof(int32_t));
-        memcpy(&context.mem[SENSOR_NODE_PRESS], &press.data, sizeof(int32_t));
+        memcpy(&context.mem[REG_TEMP], &temp_celsius.data, sizeof(int32_t));
+        memcpy(&context.mem[REG_HUM], &humidity.data, sizeof(int32_t));
+        memcpy(&context.mem[REG_PRESS], &press.data, sizeof(int32_t));
     }
 
-    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_SOUND))
+    if (!(context.mem[REG_DISABLED_SENSORS] & DISABLED_MASK_SOUND))
     {
         dfr0034_rslt_t sound_level = dfr0034_read_sound();
         if (sound_level.error == ERROR)
             printf("DFR0034_ERROR: Could not check sound level.");
 
-        memcpy(&context.mem[SENSOR_NODE_SOUND], &sound_level.data, sizeof(uint16_t));
+        memcpy(&context.mem[REG_SOUND], &sound_level.data, sizeof(uint16_t));
     }
 
-    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_MOTION))
+    if (!(context.mem[REG_DISABLED_SENSORS] & DISABLED_MASK_MOTION))
     {
         amn1_rslt_t has_motion = amn1_read_motion();
         if (has_motion.error == ERROR)
             printf("AMN1_ERROR: Could not check for motion.");
 
-        memcpy(&context.mem[SENSOR_NODE_MOTION], &has_motion.data, sizeof(uint8_t));
+        memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));
     }
 }
 
@@ -166,12 +166,12 @@ main()
     base_station_i2c_init();
 
     uint16_t sampling_time = 0;
+    printf("Starting sensor node...\n");
     for (;;)
     {
-        printf("Reading sensors...\n");
         read_all_sensor_values();
         // TODO: This operation is not safe
-        memcpy(&sampling_time, &context.mem[SENSOR_SAMPLING_FREQUENCY], sizeof(uint16_t));
+        memcpy(&sampling_time, &context.mem[REG_SAMPLING_FREQUENCY], sizeof(uint16_t));
         sleep_ms(sampling_time);
     }
 

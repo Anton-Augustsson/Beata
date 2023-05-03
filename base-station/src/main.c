@@ -5,16 +5,15 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 
-#define SAMPLING_FREQUENCY 3000 // ms
-#define SENSOR_NODE_SAMPLING_FREQUENCY 1000
-#define DISABLE_CLIMATE (1 << 0)
-#define DISABLE_SOUND 	(1 << 1)
-#define DISABLE_MOTION 	(1 << 2)
-
 #define STACK_SIZE 500
 #define ERROR_MARGIN 200
 #define BUTTON_DEBOUNCE_DELAY 50
 #define BUTTON_HANDLE_DELAY 1
+
+#define SLEEP_TIME 1000
+#define DISABLE_CLIMATE (1 << 0)
+#define DISABLE_SOUND 	(1 << 1)
+#define DISABLE_MOTION 	(1 << 2)
 
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
@@ -26,10 +25,7 @@ K_SEM_DEFINE(motion_btn_sem, 0, 1);
 volatile uint8_t update_conf = 0;
 static unsigned long button_time = 0;
 static struct sensor_value config;
-static struct sensor_value sampling_frequency = {
-    SENSOR_NODE_SAMPLING_FREQUENCY,
-    0,
-};
+static struct sensor_value sampling_frequency = {1000, 0};
 
 static struct gpio_dt_spec climate_led = GPIO_DT_SPEC_GET(DT_ALIAS(climateled), gpios);
 static struct gpio_dt_spec sound_led = GPIO_DT_SPEC_GET(DT_ALIAS(soundled), gpios);
@@ -76,11 +72,11 @@ button_task()
     gpio_add_callback(motion_button.port, &motion_btn_cb_data);
 
 	gpio_pin_configure_dt(&climate_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&climate_led, 0);
+	gpio_pin_set_dt(&climate_led, 1);
 	gpio_pin_configure_dt(&sound_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&sound_led, 0);
+	gpio_pin_set_dt(&sound_led, 1);
 	gpio_pin_configure_dt(&motion_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&motion_led, 0);
+	gpio_pin_set_dt(&motion_led, 1);
 
 	for (;;)
 	{
@@ -122,7 +118,7 @@ main_task()
     while (!device_is_ready(dev))
     {
         printk("sensor: device not ready.\n");
-        k_msleep(SAMPLING_FREQUENCY / 2);
+        k_msleep(SLEEP_TIME);
     }
 
     printk("Starting base station...\n");
@@ -163,10 +159,10 @@ main_task()
         printk("Pressure (hPa): %d.%02d\n", pressure.val1, pressure.val2);
         printk("Temperature (C): %d.%02d\n", temperature.val1, temperature.val2);
         printk("Has motion (bool): %d\n", motion.val1);
-        printk("Sound level (dB): %d\n", sound.val1);
+        printk("Sound level: %d\n", sound.val1);
         printk("===========================================\n\n");
 
-        k_msleep(SAMPLING_FREQUENCY);
+        k_msleep(SLEEP_TIME);
     }
 }
 
