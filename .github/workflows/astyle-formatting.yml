@@ -3,17 +3,17 @@ name: Astyle
 on:
   pull_request:
     branches: [ main ]
-      paths:
-        - 'base-station/src/**'
-        - 'base-station/tests/**'
-        - 'beata-driver/drivers/sensor/beata/**'
-        - 'beata-driver/tests/**'
-        - 'sensor-node/inc/**'
-        - 'sensor-node/inc/bosch/**'
-        - 'sensor-node/inc/motion/**'
-        - 'sensor-node/inc/sound/**'
-        - 'sensor-node/src/**'
-        - 'sensor-node/tests/**'
+    paths:
+      - 'base-station/src/**'
+      - 'base-station/tests/**'
+      - 'beata-driver/drivers/sensor/beata/**'
+      - 'beata-driver/tests/**'
+      - 'sensor-node/inc/**'
+      - 'sensor-node/inc/bosch/**'
+      - 'sensor-node/inc/motion/**'
+      - 'sensor-node/inc/sound/**'
+      - 'sensor-node/src/**'
+      - 'sensor-node/tests/**'
 
 jobs:
   format:
