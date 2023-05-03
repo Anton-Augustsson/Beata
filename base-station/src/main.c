@@ -6,7 +6,7 @@
 #include <zephyr/kernel.h>
 
 #define SAMPLING_FREQUENCY 3000 // ms
-#define SENSOR_NODE_SAMPLING_FREQUENCY 10
+#define SENSOR_NODE_SAMPLING_FREQUENCY 1000
 #define DISABLE_CLIMATE (1 << 0)
 #define DISABLE_SOUND 	(1 << 1)
 #define DISABLE_MOTION 	(1 << 2)

@@ -96,7 +96,7 @@ read_all_sensor_values()
     memset(&context.mem[SENSOR_NODE_MOTION], 0, sizeof(uint8_t));
     memset(&context.mem[SENSOR_NODE_SOUND], 0, sizeof(uint16_t));
 
-    if (context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_CLIMATE)
+    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_CLIMATE))
     {
         bme680_rslt_t temp_celsius = bme680_read_temp();
         if (temp_celsius.error == ERROR)
@@ -115,22 +115,22 @@ read_all_sensor_values()
         memcpy(&context.mem[SENSOR_NODE_PRESS], &press.data, sizeof(int32_t));
     }
 
-    if (context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_SOUND)
+    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_SOUND))
     {
         dfr0034_rslt_t sound_level = dfr0034_read_sound();
         if (sound_level.error == ERROR)
             printf("DFR0034_ERROR: Could not check sound level.");
 
-        memcpy(&context.mem[SENSOR_NODE_MOTION], &has_motion.data, sizeof(uint8_t));
+        memcpy(&context.mem[SENSOR_NODE_SOUND], &sound_level.data, sizeof(uint16_t));
     }
 
-    if (context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_MOTION)
+    if (!(context.mem[SENSOR_DISABLED_SENSORS] & DISABLED_MASK_MOTION))
     {
         amn1_rslt_t has_motion = amn1_read_motion();
         if (has_motion.error == ERROR)
             printf("AMN1_ERROR: Could not check for motion.");
 
-        memcpy(&context.mem[SENSOR_NODE_SOUND], &has_motion.data, sizeof(uint16_t));
+        memcpy(&context.mem[SENSOR_NODE_MOTION], &has_motion.data, sizeof(uint8_t));
     }
 }
 
