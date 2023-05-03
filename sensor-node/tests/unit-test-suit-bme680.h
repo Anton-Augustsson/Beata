@@ -179,12 +179,12 @@ int test_read_press(void)
 
   // FIXME: should be 110000 but I could not find any reg values
   set_reg_mode(HighPress);
-  //find_press_parameters(96485, 110000, 0);
+  //find_press_parameters(96485, 110000, HighPress);
   res += assert_read_pressure(96486); tests++;
 
   // FIXME: should be 30000 but I could not find any reg values
   set_reg_mode(LowPress);
-  //find_press_parameters(29000, 92279, 1);
+  //find_press_parameters(29000, 92279, LowPress);
   res += assert_read_pressure(92278); tests++;
 
   set_reg_mode(NormalReg); // Have to have it here

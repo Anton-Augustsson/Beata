@@ -34,7 +34,7 @@ enum adc_mode_t{Loud = 0, Quiet = 1, Motion = 2, NoMotion = 3,
 
 void set_reg_mode(enum reg_mode_t new_mode);
 void set_adc_mode(enum adc_mode_t new_mode);
-void set_reg_press(int value1, int value2, int value3, int mode);
+void set_reg_press(int value1, int value2, int value3, enum reg_mode_t mode);
 
 int i2c_init(int i2c, int i2c_baudrate);
 int gpio_set_function(int i2c_sda_pin, int gpio_func_i2c);
