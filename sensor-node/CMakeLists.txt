@@ -7,7 +7,15 @@ endfunction()
 
 
 OPTION(BUILD_TESTS "Build the test binary" OFF)
+OPTION(BUILD_FIND_PARAMETERS "Build the test binary to find parameters" OFF)
 if(BUILD_TESTS)
+  project(sensor-node)
+  set(CMAKE_C_STANDARD 11)
+
+  add_subdirectory(inc)
+  add_subdirectory(tests)
+
+elseif(BUILD_FIND_PARAMETERS)
   project(sensor-node)
   set(CMAKE_C_STANDARD 11)
 
