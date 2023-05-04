@@ -1,8 +1,48 @@
+/ {
+    aliases {
+        climateled = &led0;
+        soundled = &led1;
+        motionled = &led2;
+        sw0 = &button0;
+        sw1 = &button1;
+        sw2 = &button2;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led0: led_0 {
+            gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        };
+        led1: led_1 {
+            gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        };
+        led2: led_2 {
+            gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+    buttons {
+	    compatible = "gpio-keys";
+	    button0: button_0 {
+	        gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	        label = "Climate button";
+	    };
+	    button1: button_1 {
+	        gpios = <&gpio0 21 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	        label = "Sound button";
+	    };
+	    button2: button_2 {
+	        gpios = <&gpio0 22 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	        label = "Motion button";
+	    };
+    };
+};
+
 &i2c0 {
     status = "okay";
     beata: beata@17 {
-            status = "okay";
-            compatible = "zephyr,beata";
-            reg = <0x17>;
+        status = "okay";
+        compatible = "zephyr,beata";
+        reg = <0x17>;
     };
 };
