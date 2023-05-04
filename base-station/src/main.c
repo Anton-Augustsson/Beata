@@ -39,23 +39,22 @@ static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_c
 void
 button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY)
-	{
-		button_time = k_uptime_get_32();
-		// TODO: make sure pins actually checks for the GPIO pinout
+    if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY)
+    {
+        button_time = k_uptime_get_32();
+        // TODO: make sure pins actually checks for the GPIO pinout
         if (pins & BIT(climate_button.pin))
-			k_sem_give(&climate_btn_sem);
-		else if (pins & BIT(sound_button.pin))
-			k_sem_give(&sound_btn_sem);
-		else if (pins & BIT(motion_button.pin))
-			k_sem_give(&motion_btn_sem);
-	}
+            k_sem_give(&climate_btn_sem);
+        else if (pins & BIT(sound_button.pin))
+            k_sem_give(&sound_btn_sem);
+        else if (pins & BIT(motion_button.pin))
+            k_sem_give(&motion_btn_sem);
+    }
 }
 
 void
-button_task()
+interface_init()
 {
-    // Initialization of the ISR, button(s), and led(s)
     gpio_pin_configure_dt(&climate_button, GPIO_INPUT);
     gpio_pin_interrupt_configure_dt(&climate_button, GPIO_INT_EDGE_TO_ACTIVE);
     gpio_init_callback(&climate_btn_cb_data, button_isr, BIT(climate_button.pin));
@@ -71,42 +70,50 @@ button_task()
     gpio_init_callback(&motion_btn_cb_data, button_isr, BIT(motion_button.pin));
     gpio_add_callback(motion_button.port, &motion_btn_cb_data);
 
-	gpio_pin_configure_dt(&climate_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&climate_led, 1);
-	gpio_pin_configure_dt(&sound_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&sound_led, 1);
-	gpio_pin_configure_dt(&motion_led, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_set_dt(&motion_led, 1);
+    gpio_pin_configure_dt(&climate_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&climate_led, 1);
+    gpio_pin_configure_dt(&sound_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&sound_led, 1);
+    gpio_pin_configure_dt(&motion_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&motion_led, 1);
 
-	for (;;)
-	{
-		if (k_sem_take(&climate_btn_sem, K_NO_WAIT) == 0)
+}
+
+void
+button_task()
+{
+    // Initialization of the ISR, button(s), and led(s)
+    interface_init();
+
+    for (;;)
+    {
+        if (k_sem_take(&climate_btn_sem, K_NO_WAIT) == 0)
         {
-			k_mutex_lock(&config_lock, K_FOREVER);
-			gpio_pin_toggle_dt(&climate_led);
-			config.val1 ^= DISABLE_CLIMATE;
-			update_conf = 1;
-			k_mutex_unlock(&config_lock);
+            k_mutex_lock(&config_lock, K_FOREVER);
+            gpio_pin_toggle_dt(&climate_led);
+            config.val1 ^= DISABLE_CLIMATE;
+            update_conf = 1;
+            k_mutex_unlock(&config_lock);
         }
-		else if(k_sem_take(&sound_btn_sem, K_NO_WAIT) == 0)
-		{
-			k_mutex_lock(&config_lock, K_FOREVER);
-			gpio_pin_toggle_dt(&sound_led);
-			config.val1 ^= DISABLE_SOUND;
-			update_conf = 1;
-			k_mutex_unlock(&config_lock);
-		}
-		else if (k_sem_take(&motion_btn_sem, K_NO_WAIT) == 0)
-		{
-			k_mutex_lock(&config_lock, K_FOREVER);
-			gpio_pin_toggle_dt(&motion_led);
-			config.val1 ^= DISABLE_MOTION;
-			update_conf = 1;
-			k_mutex_unlock(&config_lock);
-		}
+        else if(k_sem_take(&sound_btn_sem, K_NO_WAIT) == 0)
+        {
+            k_mutex_lock(&config_lock, K_FOREVER);
+            gpio_pin_toggle_dt(&sound_led);
+            config.val1 ^= DISABLE_SOUND;
+            update_conf = 1;
+            k_mutex_unlock(&config_lock);
+        }
+        else if (k_sem_take(&motion_btn_sem, K_NO_WAIT) == 0)
+        {
+            k_mutex_lock(&config_lock, K_FOREVER);
+            gpio_pin_toggle_dt(&motion_led);
+            config.val1 ^= DISABLE_MOTION;
+            update_conf = 1;
+            k_mutex_unlock(&config_lock);
+        }
 
         k_msleep(BUTTON_HANDLE_DELAY);
-	}
+    }
 }
 
 void
@@ -123,18 +130,18 @@ main_task()
 
     printk("Starting base station...\n");
     printk("Configuring sensor node(s)...\n");
-	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &sampling_frequency);
+    sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &sampling_frequency);
 
     for (;;)
     {
-		if (update_conf)
-		{
-			printk("Writing new configurations...\n");
-			k_mutex_lock(&config_lock, K_FOREVER);
-			sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &config);
-			update_conf = 0;
-			k_mutex_unlock(&config_lock);
-		}
+        if (update_conf)
+        {
+            printk("Writing new configurations...\n");
+            k_mutex_lock(&config_lock, K_FOREVER);
+            sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &config);
+            update_conf = 0;
+            k_mutex_unlock(&config_lock);
+        }
 
         if (sensor_sample_fetch(dev) < 0)
             printk("ERROR: Could not fetch samples from sensor node.\n");
