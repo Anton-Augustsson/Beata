@@ -54,8 +54,8 @@ beata_channel_get(const struct device *dev, enum sensor_channel chan, struct sen
         val->val1 = data->has_motion;
         val->val2 = 0;
     } else if (chan == SENSOR_CHAN_PROX) {
-        val->val1 = data->sound_level / 100;
-        val->val2 = data->sound_level % 100;
+        val->val1 = data->sound_level;
+        val->val2 = data->sound_level;
     } else {
         printk("Sensor node does not support this channel.");
         return -ENOTSUP;
