@@ -16,6 +16,7 @@
 #define I2C_SLAVE_ADDRESS 0x17
 #define I2C_SLAVE_SDA_PIN 16
 #define I2C_SLAVE_SCL_PIN 17
+#define INTERRUPT_PIN 18
 
 /* Memory registers to read/write */
 #define REG_TEMP 0x00
@@ -74,6 +75,7 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
 void base_station_i2c_init() {
     gpio_init(I2C_SLAVE_SDA_PIN);
     gpio_init(I2C_SLAVE_SCL_PIN);
+    gpio_init(INTERRUPT_PIN);
     gpio_set_function(I2C_SLAVE_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SLAVE_SCL_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SLAVE_SDA_PIN);
@@ -129,6 +131,10 @@ void read_all_sensor_values() {
 
         if (has_motion.error == ERROR) {
             printf("AMN1_ERROR: Could not check for motion.");
+        }
+
+        if (has_motion.data) {
+            gpio_xor_mask(1 << INTERRUPT_PIN);
         }
 
         memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));

@@ -1,2 +1,3 @@
 zephyr_library()
 zephyr_library_sources(beata.c)
+zephyr_library_sources_ifdef(CONFIG_BEATA_TRIGGER beata_trigger.c)
