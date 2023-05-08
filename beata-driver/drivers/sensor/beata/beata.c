@@ -2,14 +2,26 @@
 #include <string.h>
 
 static int beata_init(const struct device *dev) {
-    printk("\n\nInitialising Beata.\n");
+    int ret;
+    uint8_t id;
  	const struct beata_config *config = dev->config;
-    // TODO: Check that connected device is a sensor node.
+
+	if (!device_is_ready(config->i2c.bus)) {
+		printk("I2C bus device not ready");
+		return -ENODEV;
+	}
+
+    printk("\n\nInitialising Beata.\n");
+    if ((ret = i2c_burst_read_dt(&config->i2c, REG_ID, &id, 1)) < 0) {
+        return ret;
+    }
+
 #ifdef CONFIG_BEATA_TRIGGER
 	if (config->int_gpio.port) {
 		beata_trigger_init(dev);
 	}
 #endif
+
     return 0;
 }
 

@@ -45,11 +45,13 @@
 #define REG_INT_TEMP_LOW    0x15
 #define REG_INT_TEMP_HIGH   0x19
 #define REG_INT_HUM_LOW     0x1d
-#define REG_INT_HUM_HIGH    0x22
-#define REG_INT_PRESS_LOW   0x19
-#define REG_INT_PRESS_HIGH  0x20
-#define REG_INT_SOUND_LOW   0x21
-#define REG_INT_SOUND_HIGH  0x22
+#define REG_INT_HUM_HIGH    0x21
+#define REG_INT_PRESS_LOW   0x25
+#define REG_INT_PRESS_HIGH  0x29
+#define REG_INT_SOUND_LOW   0x2d
+#define REG_INT_SOUND_HIGH  0x31
+
+#define REG_ID 0xFF
 
 #define SENSOR_NODE_INT_STATUS_TEMP     0
 #define SENSOR_NODE_INT_STATUS_HUM      1

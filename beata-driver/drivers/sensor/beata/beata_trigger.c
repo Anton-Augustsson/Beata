@@ -73,6 +73,7 @@ static int beata_setup_motion(const struct device *dev,
 	}
 
     if (trig->chan != SENSOR_CHAN_IR) {
+        printk("Failed to add trigger for motion, expected channel SENSOR_CHAN_IR");
         return -ENOTSUP;
     }
 
@@ -114,6 +115,7 @@ static int beata_setup_threshold(const struct device *dev,
         data->sound_trig = trig;
 	    data->sound_handler = handler;
     } else {
+        printk("Failed to add trigger for threshold, channel not supported");
         return -ENOTSUP;
     }
 
@@ -149,6 +151,7 @@ int beata_trigger_init(const struct device *dev) {
 		return -ENODEV;
 	}
 
+    data->dev = dev;
     data->work.handler = beata_work_cb;
 
     if ((ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INT_EDGE_BOTH)) < 0) {

@@ -33,16 +33,31 @@
 #define REG_INT_MOTION    0x14
 
 /* Trigger target value registers */
-#define REG_INT_TEMP_LOW   0x15
-#define REG_INT_TEMP_HIGH  0x16
-#define REG_INT_SOUND_LOW  0x17
-#define REG_INT_SOUND_HIGH 0x18
+#define REG_INT_TEMP_LOW    0x15
+#define REG_INT_TEMP_HIGH   0x19
+#define REG_INT_HUM_LOW     0x1d
+#define REG_INT_HUM_HIGH    0x21
+#define REG_INT_PRESS_LOW   0x25
+#define REG_INT_PRESS_HIGH  0x29
+#define REG_INT_SOUND_LOW   0x2d
+#define REG_INT_SOUND_HIGH  0x31
+
+/* Sensor node id */
+#define REG_ID  0xFF
+
+#define SENSOR_NODE_INT_STATUS_TEMP     0
+#define SENSOR_NODE_INT_STATUS_HUM      1
+#define SENSOR_NODE_INT_STATUS_PRESS    2
+#define SENSOR_NODE_INT_STATUS_SOUND    3
+#define SENSOR_NODE_INT_STATUS_MOTION   4
 
 #define DISABLED_MASK_CLIMATE (1 << 0)
 #define DISABLED_MASK_SOUND (1 << 1)
 #define DISABLED_MASK_MOTION (1 << 2)
 
 #define INIT_RETRY_DELAY_MS 1000
+
+static uint8_t motion_prev = 0;
 
 static struct {
     uint8_t mem[256];
@@ -89,6 +104,7 @@ void base_station_i2c_init() {
     gpio_init(INTERRUPT_PIN);
     gpio_set_function(I2C_SLAVE_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SLAVE_SCL_PIN, GPIO_FUNC_I2C);
+    gpio_set_dir(INTERRUPT_PIN, GPIO_OUT);
     gpio_pull_up(I2C_SLAVE_SDA_PIN);
     gpio_pull_up(I2C_SLAVE_SCL_PIN);
     i2c_init(i2c0, I2C_BAUDRATE);
@@ -144,8 +160,17 @@ void read_all_sensor_values() {
             printf("AMN1_ERROR: Could not check for motion.");
         }
 
-        if (has_motion.data) {
-            gpio_xor_mask(1 << INTERRUPT_PIN);
+        /* Check if interrupt for motion is enabled, and trigger it
+           whenever it changes. */
+        if (context.mem[REG_INT_MOTION]) {
+            if (motion_prev != has_motion.data) {
+                gpio_xor_mask(1 << INTERRUPT_PIN);
+            }
+            motion_prev = has_motion.data;
+            // TODO: Move to top and |= in each sensor reading to ensure that
+            // all interrupt flags are set.
+            uint8_t status = 1 << SENSOR_NODE_INT_STATUS_MOTION;
+            memcpy(&context.mem[REG_INT_STATUS], &status, sizeof(status));
         }
 
         memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));
@@ -176,11 +201,18 @@ int main() {
     adc_init();
     sensors_init();
     base_station_i2c_init();
+
+    uint8_t id = 17, no_int_status = 0;
     uint16_t sampling_time = 0;
     printf("Starting sensor node...\n");
+    memcpy(&context.mem[REG_ID], &id, sizeof(id));
 
     for (;;) {
+        // Reset interrupt status
+        memcpy(&context.mem[REG_INT_STATUS], &no_int_status, sizeof(no_int_status));
+
         read_all_sensor_values();
+
         // TODO: This operation is not safe
         memcpy(&sampling_time, &context.mem[REG_SAMPLING_FREQUENCY], sizeof(uint16_t));
         sleep_ms(sampling_time);

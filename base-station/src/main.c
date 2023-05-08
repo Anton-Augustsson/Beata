@@ -21,7 +21,6 @@
 #define TEMP_INITIAL_CEL 25
 #define TEMP_WINDOW_HALF_UCEL 500000
 
-
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
 K_SEM_DEFINE(climate_btn_sem, 0, 1);
@@ -33,6 +32,7 @@ volatile uint8_t update_conf = 0;
 static unsigned long button_time = 0;
 static struct sensor_value config;
 static struct sensor_value sampling_frequency = {1000, 0};
+static struct sensor_trigger motion_trig;
 
 static struct gpio_dt_spec climate_led = GPIO_DT_SPEC_GET(DT_ALIAS(climateled), gpios);
 static struct gpio_dt_spec sound_led = GPIO_DT_SPEC_GET(DT_ALIAS(soundled), gpios);
@@ -43,11 +43,14 @@ static struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios
 
 static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_cb_data;
 
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig) {
+    printk("MOTION DETECTED BAMS\n");
+}
+
 void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY) {
         button_time = k_uptime_get_32();
 
-        // TODO: make sure pins actually checks for the GPIO pinout
         if (pins & BIT(climate_button.pin)) {
             k_sem_give(&climate_btn_sem);
         } else if (pins & BIT(sound_button.pin)) {
@@ -108,39 +111,29 @@ void button_task() {
     }
 }
 
-// static void trigger_handler(const struct device *dev,
-// 			    const struct sensor_trigger *trig)
-// {
-//     // TODO: do something here
-// }
-
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
     struct sensor_value temperature, humidity, pressure, motion, sound;
 
     while (!device_is_ready(dev)) {
-        printk("sensor: device not ready.\n");
+        printk("Sensor: device not ready.\n");
         k_msleep(SLEEP_TIME);
     }
 
     printk("Starting base station...\n");
     printk("Configuring sensor node(s)...\n");
+    printk("Setting sampling frequency...\n");
     sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &sampling_frequency);
 
-// #ifdef CONFIG_BEATA_TRIGGER
-// 	rc = set_window_ucel(dev, TEMP_INITIAL_CEL * UCEL_PER_CEL);
-// 	if (rc == 0) {
-// 		trig.type = SENSOR_TRIG_THRESHOLD;
-// 		trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
-// 		rc = sensor_trigger_set(dev, &trig, trigger_handler);
-// 	}
-
-// 	if (rc != 0) {
-// 		printf("Trigger set failed: %d\n", rc);
-// 		return;
-// 	}
-// 	printk("Trigger set got %d\n", rc);
-// #endif
+#ifdef CONFIG_BEATA_TRIGGER
+    printk("Enabling trigger for motion...\n");
+    motion_trig.type = SENSOR_TRIG_MOTION;
+	motion_trig.chan = SENSOR_CHAN_IR;
+	int ret = sensor_trigger_set(dev, &motion_trig, trigger_handler);
+    if (ret < 0) {
+		printk("Trigger set failed: %d\n", ret);
+    }
+#endif
 
     for (;;) {
         if (update_conf) {
