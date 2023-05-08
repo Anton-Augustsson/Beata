@@ -23,6 +23,7 @@ static void beata_work_cb(struct k_work *work) {
 		return;
 	}
 
+    printk("status: %d\n", status);
     /* Check which sensor triggered the interrupt.
         Multiple interrupts can theoretically be triggered
         at the same time, which means that we check each sensor

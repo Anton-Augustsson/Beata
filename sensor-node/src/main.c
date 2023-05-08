@@ -58,6 +58,7 @@
 #define INIT_RETRY_DELAY_MS 1000
 
 static uint8_t motion_prev = 0;
+static int32_t no_threshold = INT32_MIN;
 
 static struct {
     uint8_t mem[256];
@@ -111,7 +112,19 @@ void base_station_i2c_init() {
     i2c_slave_init(i2c0, I2C_SLAVE_ADDRESS, &i2c_slave_handler);
 }
 
+uint8_t check_threshold(uint8_t reg_low, uint8_t reg_high, uint8_t status_bit, int32_t value) {
+    int32_t t_low, t_high;
+    memcpy(&t_low, &context.mem[reg_low], sizeof(int32_t));
+    memcpy(&t_high, &context.mem[reg_high], sizeof(int32_t));
+    if ((t_low != no_threshold && t_low > value) || (t_high != no_threshold && t_high < value)) {
+        return 1 << status_bit;
+    }
+    return 0;
+}
+
 void read_all_sensor_values() {
+    uint8_t int_status = 0;
+
     // Clear memory to ensure that disabled sensors always produce zeros
     memset(&context.mem[REG_TEMP], 0, sizeof(int32_t));
     memset(&context.mem[REG_HUM], 0, sizeof(int32_t));
@@ -138,6 +151,29 @@ void read_all_sensor_values() {
             printf("BME680_ERROR: Could not fetch pressure.");
         }
 
+        if (context.mem[REG_INT_THRESHOLD]) {
+            int_status |= check_threshold(
+                REG_INT_TEMP_LOW,
+                REG_INT_TEMP_HIGH,
+                SENSOR_NODE_INT_STATUS_TEMP,
+                temp_celsius.data
+            );
+
+            int_status |= check_threshold(
+                REG_INT_HUM_LOW,
+                REG_INT_HUM_HIGH,
+                SENSOR_NODE_INT_STATUS_HUM,
+                humidity.data
+            );
+
+            int_status |= check_threshold(
+                REG_INT_PRESS_LOW,
+                REG_INT_PRESS_HIGH,
+                SENSOR_NODE_INT_STATUS_PRESS,
+                press.data
+            );
+        }
+
         memcpy(&context.mem[REG_TEMP], &temp_celsius.data, sizeof(int32_t));
         memcpy(&context.mem[REG_HUM], &humidity.data, sizeof(int32_t));
         memcpy(&context.mem[REG_PRESS], &press.data, sizeof(int32_t));
@@ -148,6 +184,15 @@ void read_all_sensor_values() {
 
         if (sound_level.error == ERROR) {
             printf("DFR0034_ERROR: Could not check sound level.");
+        }
+
+        if (context.mem[REG_INT_THRESHOLD]) {
+            int_status |= check_threshold(
+                REG_INT_SOUND_LOW,
+                REG_INT_SOUND_HIGH,
+                SENSOR_NODE_INT_STATUS_SOUND,
+                (int32_t)sound_level.data
+            );
         }
 
         memcpy(&context.mem[REG_SOUND], &sound_level.data, sizeof(uint16_t));
@@ -167,14 +212,16 @@ void read_all_sensor_values() {
                 gpio_xor_mask(1 << INTERRUPT_PIN);
             }
             motion_prev = has_motion.data;
-            // TODO: Move to top and |= in each sensor reading to ensure that
-            // all interrupt flags are set.
-            uint8_t status = 1 << SENSOR_NODE_INT_STATUS_MOTION;
-            memcpy(&context.mem[REG_INT_STATUS], &status, sizeof(status));
+            int_status |= 1 << SENSOR_NODE_INT_STATUS_MOTION;
         }
 
         memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));
     }
+
+    /* Update interrupt status based on current readings.
+       If no interrupts will be triggered during this iteration,
+       it will be set to 0. */
+    memcpy(&context.mem[REG_INT_STATUS], &int_status, sizeof(int_status));
 }
 
 void sensors_init() {
@@ -202,14 +249,24 @@ int main() {
     sensors_init();
     base_station_i2c_init();
 
-    uint8_t id = 17, no_int_status = 0;
     uint16_t sampling_time = 0;
     printf("Starting sensor node...\n");
-    memcpy(&context.mem[REG_ID], &id, sizeof(id));
+    memset(&context.mem[REG_ID], 17, 1);
+
+    // Reset all interrupt thresholds to a known value.
+    // This way we can differentiate between a set and unset value.
+    memcpy(&context.mem[REG_INT_TEMP_LOW], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_TEMP_HIGH], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_HUM_LOW], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_HUM_HIGH], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_PRESS_LOW], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_PRESS_HIGH], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_SOUND_LOW], &no_threshold, sizeof(no_threshold));
+    memcpy(&context.mem[REG_INT_SOUND_HIGH], &no_threshold, sizeof(no_threshold));
 
     for (;;) {
         // Reset interrupt status
-        memcpy(&context.mem[REG_INT_STATUS], &no_int_status, sizeof(no_int_status));
+        memset(&context.mem[REG_INT_STATUS], 0, 1);
 
         read_all_sensor_values();
 
