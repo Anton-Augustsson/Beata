@@ -1,11 +1,12 @@
 #include "beata.h"
+#include <string.h>
 
 static int beata_init(const struct device *dev) {
     printk("\n\nInitialising Beata.\n");
- 	const struct bmg160_device_config *config = dev->config;
+ 	const struct beata_config *config = dev->config;
     // TODO: Check that connected device is a sensor node.
 #ifdef CONFIG_BEATA_TRIGGER
-	if (config->interrupt_gpio.port) {
+	if (config->int_gpio.port) {
 		beata_trigger_init(dev);
 	}
 #endif
@@ -146,7 +147,7 @@ static const struct sensor_driver_api beata_api = {
     static struct beata_data beata_data_##inst;              \
     static const struct beata_config beata_config_##inst = { \
         .i2c = I2C_DT_SPEC_INST_GET(inst),                   \
-        IF_ENABLED(CONFIG_SENSOR_NODE_TRIGGER,				\
+        IF_ENABLED(CONFIG_BEATA_TRIGGER,				\
             (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
     };                                                       \
     DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,            \

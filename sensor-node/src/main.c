@@ -27,6 +27,17 @@
 #define REG_SAMPLING_FREQUENCY 0x0F
 #define REG_DISABLED_SENSORS 0x11
 
+/* Interrupt (trigger) enable registers */
+#define REG_INT_STATUS    0x12 // Which interrupt was triggered
+#define REG_INT_THRESHOLD 0x13
+#define REG_INT_MOTION    0x14
+
+/* Trigger target value registers */
+#define REG_INT_TEMP_LOW   0x15
+#define REG_INT_TEMP_HIGH  0x16
+#define REG_INT_SOUND_LOW  0x17
+#define REG_INT_SOUND_HIGH 0x18
+
 #define DISABLED_MASK_CLIMATE (1 << 0)
 #define DISABLED_MASK_SOUND (1 << 1)
 #define DISABLED_MASK_MOTION (1 << 2)

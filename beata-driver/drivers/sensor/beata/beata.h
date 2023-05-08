@@ -13,13 +13,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/sensor.h>
 #endif
-
-LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Data registers */
 #define SENSOR_NODE_ADDR 0x17
@@ -40,16 +37,15 @@ LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
 #define REG_DISABLED_SENSORS 0x11
 
 /* Interrupt (trigger) enable registers */
-#define REG_INT_STATUS 0x12 // Which interrupt was triggered
-#define REG_INT_TEMP   0x13
-#define REG_INT_MOTION 0x16
-#define REG_INT_SOUND  0x17
+#define REG_INT_STATUS    0x12 // Which interrupt was triggered
+#define REG_INT_THRESHOLD 0x13
+#define REG_INT_MOTION    0x14
 
 /* Trigger target value registers */
-#define REG_INT_TEMP_LOW   0x18
-#define REG_INT_TEMP_HIGH  0x1C
-#define REG_INT_SOUND_LOW  0x20
-#define REG_INT_SOUND_HIGH 0x24
+#define REG_INT_TEMP_LOW   0x15
+#define REG_INT_TEMP_HIGH  0x16
+#define REG_INT_SOUND_LOW  0x17
+#define REG_INT_SOUND_HIGH 0x18
 
 struct beata_config {
     struct i2c_dt_spec i2c;
@@ -64,6 +60,14 @@ struct beata_data {
     int32_t press;
     uint16_t sound_level;
     uint8_t has_motion;
+
+#ifdef CONFIG_BEATA_TRIGGER
+    struct k_work work;
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+    const struct sensor_trigger *motion_trig, *threshold_trig;
+    sensor_trigger_handler_t motion_handler, threshold_handler;
+#endif
 };
 
 int beata_trigger_init(const struct device *dev);
