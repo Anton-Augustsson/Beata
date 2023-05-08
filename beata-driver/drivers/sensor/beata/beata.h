@@ -39,13 +39,11 @@ LOG_MODULE_REGISTER(BEATA, CONFIG_SENSOR_LOG_LEVEL);
  * bit >2:  discarded */
 #define SENSOR_DISABLED_SENSORS   0x11
 
-struct beata_config
-{
+struct beata_config {
     struct i2c_dt_spec i2c;
 };
 
-struct beata_data
-{
+struct beata_data {
     int32_t temp_celsius;
     int32_t humidity;
     int32_t press;
