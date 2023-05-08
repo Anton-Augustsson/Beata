@@ -31,7 +31,7 @@ K_SEM_DEFINE(motion_btn_sem, 0, 1);
 volatile uint8_t update_conf = 0;
 static unsigned long button_time = 0;
 static struct sensor_value config;
-static struct sensor_value sampling_frequency = {1000, 0};
+static struct sensor_value sampling_frequency = {50, 0};
 static struct sensor_trigger motion_trig;
 
 static struct gpio_dt_spec climate_led = GPIO_DT_SPEC_GET(DT_ALIAS(climateled), gpios);
