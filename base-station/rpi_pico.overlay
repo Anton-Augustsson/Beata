@@ -44,5 +44,6 @@
         status = "okay";
         compatible = "zephyr,beata";
         reg = <0x17>;
+        int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
     };
 };

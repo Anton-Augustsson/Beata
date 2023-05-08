@@ -14,24 +14,48 @@ static void beata_gpio_callback(const struct device *port,
     k_work_submit(&data->work);
 }
 
-static int beata_handle_int(const struct device *dev) {
-    int ret;
+static void beata_work_cb(struct k_work *work) {
 	uint8_t status;
-    const struct beata_data *data = dev->data;
-    const struct beata_config *config = dev->config;
+	const struct beata_data *data = CONTAINER_OF(work, struct beata_data, work);
+    const struct beata_config *config = data->dev->config;
 
-	if ((ret = i2c_burst_read_dt(&config->i2c, REG_INT_STATUS, &status, 1)) < 0) {
-		return ret;
+	if (i2c_burst_read_dt(&config->i2c, REG_INT_STATUS, &status, 1) < 0) {
+		return;
 	}
 
-    // TODO: Check if bit is set for each sensor
-    // if (status & (1 << ))
-    return 0;
-}
+    /* Check which sensor triggered the interrupt.
+        Multiple interrupts can theoretically be triggered
+        at the same time, which means that we check each sensor
+        in separate ifs. */
+    if (data->temp_handler) {
+        if (status & (1 << SENSOR_NODE_INT_STATUS_TEMP)) {
+            data->temp_handler(data->dev, data->temp_trig);
+        }
+    }
 
-static void beata_work_cb(struct k_work *work) {
-	struct beata_data *beata = CONTAINER_OF(work, struct beata_data, work);
-	beata_handle_int(beata->dev);
+    if (data->hum_handler) {
+        if (status & (1 << SENSOR_NODE_INT_STATUS_HUM)) {
+            data->hum_handler(data->dev, data->hum_trig);
+        }
+    }
+
+    if (data->press_handler) {
+        if (status & (1 << SENSOR_NODE_INT_STATUS_PRESS)) {
+            data->press_handler(data->dev, data->press_trig);
+        }
+    }
+
+    if (data->sound_handler) {
+        if (status & (1 << SENSOR_NODE_INT_STATUS_SOUND)) {
+            data->sound_handler(data->dev, data->sound_trig);
+        }
+    }
+
+    if (data->motion_handler) {
+        if (status & (1 << SENSOR_NODE_INT_STATUS_MOTION)) {
+            data->motion_handler(data->dev, data->motion_trig);
+        }
+    }
 }
 
 static int beata_setup_motion(const struct device *dev,
@@ -39,17 +63,22 @@ static int beata_setup_motion(const struct device *dev,
 	sensor_trigger_handler_t handler)
 {
     int ret;
-	struct beata_data *data = dev->data;
-	struct beata_config *config = dev->config;
     uint8_t enable_int = 1;
+	struct beata_data *data = dev->data;
+	const struct beata_config *config = dev->config;
 
     /* Enable interrupts for motion on the sensor node */
     if ((ret = i2c_burst_write_dt(&config->i2c, REG_INT_MOTION, &enable_int, 1))) {
 		return ret;
 	}
 
+    if (trig->chan != SENSOR_CHAN_IR) {
+        return -ENOTSUP;
+    }
+
 	data->motion_handler = handler;
 	data->motion_trig = trig;
+
 	return 0;
 }
 
@@ -59,7 +88,7 @@ static int beata_setup_threshold(const struct device *dev,
 {
     int ret;
 	struct beata_data *data = dev->data;
-	struct beata_config *config = dev->config;
+	const struct beata_config *config = dev->config;
     uint8_t enable_int = 1;
 
     /* Enable interrupts for threshold values on the sensor node.
@@ -71,17 +100,30 @@ static int beata_setup_threshold(const struct device *dev,
 		return ret;
 	}
 
-	data->threshold_handler = handler;
-	data->threshold_trig = trig;
+    /* Set correct trigger based on channel. */
+    if (trig->chan == SENSOR_CHAN_AMBIENT_TEMP) {
+        data->temp_trig = trig;
+	    data->temp_handler = handler;
+    } else if (trig->chan == SENSOR_CHAN_HUMIDITY) {
+        data->hum_trig = trig;
+	    data->hum_handler = handler;
+    } else if (trig->chan == SENSOR_CHAN_PRESS) {
+        data->press_trig = trig;
+	    data->press_handler = handler;
+    } else if (trig->chan == SENSOR_CHAN_PROX) {
+        data->sound_trig = trig;
+	    data->sound_handler = handler;
+    } else {
+        return -ENOTSUP;
+    }
+
 	return 0;
 }
 
-
 int beata_trigger_set(const struct device *dev,
 	const struct sensor_trigger *trig,
-	sensor_trigger_handler_t handler)
-{
-	struct beata_config *config = dev->config;
+	sensor_trigger_handler_t handler) {
+    const struct beata_config *config = dev->config;
 
 	if (!config->int_gpio.port) {
 		return -ENOTSUP;
@@ -99,11 +141,11 @@ int beata_trigger_set(const struct device *dev,
 
 int beata_trigger_init(const struct device *dev) {
     int ret;
-    struct beata_config *config = dev->config;
+    const struct beata_config *config = dev->config;
     struct beata_data *data = dev->data;
 
 	if (!device_is_ready(config->int_gpio.port)) {
-		printk("Sensor node interrupt GPIO device not ready");
+		printk("DRIVER: Interrupt GPIO device is not ready.");
 		return -ENODEV;
 	}
 

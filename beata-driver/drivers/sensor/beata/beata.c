@@ -78,29 +78,68 @@ static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
     int ret;
     const struct beata_config *config = dev->config;
 
-    if (chan != SENSOR_CHAN_ALL) {
-        printk("attr_set() not supported on this channel.");
-        return -ENOTSUP;
-    }
-
-    if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-        if (val->val1 <= 0) {
-            printk("Invalid sampling frequency for sensor node, must be > 0.");
-            return -EINVAL;
+    if (attr == SENSOR_ATTR_UPPER_THRESH) {
+        uint8_t target_reg;
+        if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+            target_reg = REG_INT_TEMP_HIGH;
+        } else if (chan == SENSOR_CHAN_HUMIDITY) {
+            target_reg = REG_INT_HUM_HIGH;
+        } else if (chan == SENSOR_CHAN_PRESS) {
+            target_reg = REG_INT_PRESS_HIGH;
+        } else if (chan == SENSOR_CHAN_PROX) {
+            target_reg = REG_INT_SOUND_HIGH;
+        } else {
+            printk("attr_set() not supported on this channel for SENSOR_ATTR_UPPER_THRESH.");
+            return -ENOTSUP;
         }
 
-        if ((ret = i2c_burst_write_dt(&config->i2c, REG_SAMPLING_FREQUENCY,
-                                      (uint8_t *)(&val->val1), 2)) < 0) {
+        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&val->val1), 4)) < 0) {
             return ret;
         }
-    } else if (attr == SENSOR_ATTR_FEATURE_MASK) {
-        if ((ret = i2c_burst_write_dt(&config->i2c, REG_DISABLED_SENSORS,
-                                      (uint8_t *)(&val->val1), 1)) < 0) {
+    } else if (attr == SENSOR_ATTR_LOWER_THRESH) {
+        uint8_t target_reg;
+        if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+            target_reg = REG_INT_TEMP_LOW;
+        } else if (chan == SENSOR_CHAN_HUMIDITY) {
+            target_reg = REG_INT_HUM_LOW;
+        } else if (chan == SENSOR_CHAN_PRESS) {
+            target_reg = REG_INT_PRESS_LOW;
+        } else if (chan == SENSOR_CHAN_PROX) {
+            target_reg = REG_INT_SOUND_LOW;
+        } else {
+            printk("attr_set() not supported on this channel for SENSOR_ATTR_LOWER_THRESH.");
+            return -ENOTSUP;
+        }
+
+        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&val->val1), 4)) < 0) {
             return ret;
         }
     } else {
-        printk("attr_set() does not support this attribute.");
-        return -ENOTSUP;
+        if (chan != SENSOR_CHAN_ALL) {
+            printk("attr_set() not supported on this channel.");
+            return -ENOTSUP;
+        }
+
+        /* Normal attributes/opeartion */
+        if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+            if (val->val1 <= 0) {
+                printk("Invalid sampling frequency for sensor node, must be > 0.");
+                return -EINVAL;
+            }
+
+            if ((ret = i2c_burst_write_dt(&config->i2c, REG_SAMPLING_FREQUENCY,
+                                        (uint8_t *)(&val->val1), 2)) < 0) {
+                return ret;
+            }
+        } else if (attr == SENSOR_ATTR_FEATURE_MASK) {
+            if ((ret = i2c_burst_write_dt(&config->i2c, REG_DISABLED_SENSORS,
+                                        (uint8_t *)(&val->val1), 1)) < 0) {
+                return ret;
+            }
+        } else {
+            printk("attr_set() does not support this attribute.");
+            return -ENOTSUP;
+        }
     }
 
     return 0;

@@ -15,6 +15,13 @@
 #define DISABLE_SOUND   (1 << 1)
 #define DISABLE_MOTION  (1 << 2)
 
+/* Trigger on interupts */
+#define UCEL_PER_CEL 1000000
+#define UCEL_PER_MCEL 1000
+#define TEMP_INITIAL_CEL 25
+#define TEMP_WINDOW_HALF_UCEL 500000
+
+
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
 K_SEM_DEFINE(climate_btn_sem, 0, 1);
@@ -101,6 +108,12 @@ void button_task() {
     }
 }
 
+// static void trigger_handler(const struct device *dev,
+// 			    const struct sensor_trigger *trig)
+// {
+//     // TODO: do something here
+// }
+
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
     struct sensor_value temperature, humidity, pressure, motion, sound;
@@ -113,6 +126,21 @@ void main_task() {
     printk("Starting base station...\n");
     printk("Configuring sensor node(s)...\n");
     sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &sampling_frequency);
+
+// #ifdef CONFIG_BEATA_TRIGGER
+// 	rc = set_window_ucel(dev, TEMP_INITIAL_CEL * UCEL_PER_CEL);
+// 	if (rc == 0) {
+// 		trig.type = SENSOR_TRIG_THRESHOLD;
+// 		trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
+// 		rc = sensor_trigger_set(dev, &trig, trigger_handler);
+// 	}
+
+// 	if (rc != 0) {
+// 		printf("Trigger set failed: %d\n", rc);
+// 		return;
+// 	}
+// 	printk("Trigger set got %d\n", rc);
+// #endif
 
     for (;;) {
         if (update_conf) {

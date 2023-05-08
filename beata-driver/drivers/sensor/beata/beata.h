@@ -42,10 +42,20 @@
 #define REG_INT_MOTION    0x14
 
 /* Trigger target value registers */
-#define REG_INT_TEMP_LOW   0x15
-#define REG_INT_TEMP_HIGH  0x16
-#define REG_INT_SOUND_LOW  0x17
-#define REG_INT_SOUND_HIGH 0x18
+#define REG_INT_TEMP_LOW    0x15
+#define REG_INT_TEMP_HIGH   0x19
+#define REG_INT_HUM_LOW     0x1d
+#define REG_INT_HUM_HIGH    0x22
+#define REG_INT_PRESS_LOW   0x19
+#define REG_INT_PRESS_HIGH  0x20
+#define REG_INT_SOUND_LOW   0x21
+#define REG_INT_SOUND_HIGH  0x22
+
+#define SENSOR_NODE_INT_STATUS_TEMP     0
+#define SENSOR_NODE_INT_STATUS_HUM      1
+#define SENSOR_NODE_INT_STATUS_PRESS    2
+#define SENSOR_NODE_INT_STATUS_SOUND    3
+#define SENSOR_NODE_INT_STATUS_MOTION   4
 
 struct beata_config {
     struct i2c_dt_spec i2c;
@@ -65,8 +75,18 @@ struct beata_data {
     struct k_work work;
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
-    const struct sensor_trigger *motion_trig, *threshold_trig;
-    sensor_trigger_handler_t motion_handler, threshold_handler;
+
+    const struct sensor_trigger *temp_trig;
+    const struct sensor_trigger *hum_trig;
+    const struct sensor_trigger *press_trig;
+    const struct sensor_trigger *sound_trig;
+    const struct sensor_trigger *motion_trig;
+
+    sensor_trigger_handler_t temp_handler;
+    sensor_trigger_handler_t hum_handler;
+    sensor_trigger_handler_t press_handler;
+    sensor_trigger_handler_t sound_handler;
+    sensor_trigger_handler_t motion_handler;
 #endif
 };
 
