@@ -7,8 +7,16 @@ endfunction()
 
 
 OPTION(BUILD_TESTS "Build the test binary" OFF)
+OPTION(BUILD_COVERAGE "Build the test binary to get coverage" OFF)
 OPTION(BUILD_FIND_PARAMETERS "Build the test binary to find parameters" OFF)
 if(BUILD_TESTS)
+	project(sensor-node)
+	set(CMAKE_C_STANDARD 11)
+
+	add_subdirectory(inc)
+	add_subdirectory(tests)
+
+elseif(BUILD_COVERAGE)
 	project(CMake_GCov C)
 
 	# Set the compiler options
@@ -17,27 +25,47 @@ if(BUILD_TESTS)
 	set(CMAKE_C_OUTPUT_EXTENSION_REPLACE ON)
 	
 	# Create OBJECT_DIR variable
-	set(OBJECT_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/RunAdder.dir)
+	set(OBJECT_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/RunCoverageBme680.dir)
 	message("-- Object files will be output to: ${OBJECT_DIR}")
-	set(COVERAGE_DIR inc/bosch)
+
+	set(COVERAGE_DIR_BME680 inc/bosch)
+	set(COVERAGE_DIR_AMN1 inc/motion)
+	set(COVERAGE_DIR_DFR0034 inc/sound)
 	
-	# Set the sources
 	set(SOURCES
 		tests/unit-tests.c
 		inc/bosch/bme680.c
-		#inc/motion/amn1.c
-    	#inc/sound/dfr0034.c
     )
-
-	# Create the executable
-	add_executable(RunAdder ${SOURCES})
+	add_executable(RunCoverageBme680 ${SOURCES})
 	
+	set(SOURCES
+		tests/unit-tests.c
+		inc/motion/amn1.c
+    )
+	add_executable(RunCoverageAmn1 ${SOURCES})
+
+	set(SOURCES
+		tests/unit-tests.c
+    	inc/sound/dfr0034.c
+    )
+	add_executable(RunCoverageDfr0034 ${SOURCES})
+
 	add_library(
-		inc
-    	"inc/motion/amn1.h"
-    	"inc/motion/amn1.c"
-    	"inc/sound/dfr0034.h"
-    	"inc/sound/dfr0034.c"
+		inc_bme680
+		inc/bosch/bme680.h
+		inc/bosch/bme680.c
+	)
+
+	add_library(
+		inc_amn1
+    	inc/motion/amn1.h
+    	inc/motion/amn1.c
+	)
+
+	add_library(
+		inc_dfr0034
+    	inc/sound/dfr0034.h
+    	inc/sound/dfr0034.c
 	)
 
 	add_library(
@@ -46,10 +74,17 @@ if(BUILD_TESTS)
     	tests/mocks.c
 	)
 
-	target_link_libraries(RunAdder PUBLIC inc mocks)
+	target_link_libraries(RunCoverageBme680 PUBLIC inc_amn1 inc_dfr0034 mocks)
+	target_link_libraries(RunCoverageAmn1 PUBLIC inc_bme680 inc_dfr0034 mocks)
+	target_link_libraries(RunCoverageDfr0034 PUBLIC inc_bme680 inc_amn1 mocks)
 	
-	target_compile_definitions(inc PUBLIC -D BUILD_TESTS)
-	target_compile_definitions(RunAdder PUBLIC -D BUILD_TESTS)
+	target_compile_definitions(inc_bme680 PUBLIC -D BUILD_TESTS)
+	target_compile_definitions(inc_amn1 PUBLIC -D BUILD_TESTS)
+	target_compile_definitions(inc_dfr0034 PUBLIC -D BUILD_TESTS)
+
+	target_compile_definitions(RunCoverageBme680 PUBLIC -D BUILD_TESTS)
+	target_compile_definitions(RunCoverageAmn1 PUBLIC -D BUILD_TESTS)
+	target_compile_definitions(RunCoverageDfr0034 PUBLIC -D BUILD_TESTS)
 
 	# Create the gcov target. Run coverage tests with 'make gcov'
 	add_custom_target(gcov
@@ -59,7 +94,7 @@ if(BUILD_TESTS)
 	    )
 	add_custom_command(TARGET gcov
 	    COMMAND echo "=================== GCOV ===================="
-	    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/${COVERAGE_DIR}/*.c -o ${OBJECT_DIR}/${COVERAGE_DIR}
+	    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/${COVERAGE_DIR_BME680}/*.c -o ${OBJECT_DIR}/${COVERAGE_DIR_BME680}
 	        | grep -A 5 "bme680.c" > CoverageSummary.tmp
 	    COMMAND cat CoverageSummary.tmp
 	    COMMAND echo "-- Coverage files have been output to ${CMAKE_BINARY_DIR}/coverage"
@@ -81,7 +116,7 @@ if(BUILD_TESTS)
 	# Testing
 	enable_testing()
 	
-	add_test(output_test ${CMAKE_CURRENT_BINARY_DIR}/RunAdder)
+	add_test(output_test ${CMAKE_CURRENT_BINARY_DIR}/RunCoverageBme680)
 
 
 elseif(BUILD_FIND_PARAMETERS)
