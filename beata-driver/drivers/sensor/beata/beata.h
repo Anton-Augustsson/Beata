@@ -18,6 +18,11 @@
 #include <zephyr/drivers/sensor.h>
 #endif
 
+/* sensor resolutions */
+#define TEMP_RESOLUTION 100
+#define HUM_RESOLUTION 1000
+#define PRESS_RESOLUTION 1000
+
 /* Data registers */
 #define SENSOR_NODE_ADDR 0x17
 #define REG_TEMP         0x00

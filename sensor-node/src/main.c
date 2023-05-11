@@ -116,6 +116,7 @@ uint8_t check_threshold(uint8_t reg_low, uint8_t reg_high, uint8_t status_bit, i
     int32_t t_low, t_high;
     memcpy(&t_low, &context.mem[reg_low], sizeof(int32_t));
     memcpy(&t_high, &context.mem[reg_high], sizeof(int32_t));
+    printf("value: %d, t_low: %d, t_high: %d, status_bit: %d\n", value, t_low, t_high, status_bit);
     if ((t_low != no_threshold && t_low > value) || (t_high != no_threshold && t_high < value)) {
         return 1 << status_bit;
     }

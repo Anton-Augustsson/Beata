@@ -63,14 +63,14 @@ static int beata_channel_get(const struct device *dev, enum sensor_channel chan,
     struct beata_data *data = dev->data;
 
     if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
-        val->val1 = data->temp_celsius / 100;
-        val->val2 = data->temp_celsius % 100;
+        val->val1 = data->temp_celsius / TEMP_RESOLUTION;
+        val->val2 = data->temp_celsius % TEMP_RESOLUTION;
     } else if (chan == SENSOR_CHAN_HUMIDITY) {
-        val->val1 = data->humidity / 1000;
-        val->val2 = data->humidity % 1000;
+        val->val1 = data->humidity / HUM_RESOLUTION;
+        val->val2 = data->humidity % HUM_RESOLUTION;
     } else if (chan == SENSOR_CHAN_PRESS) {
-        val->val1 = data->press / 1000;
-        val->val2 = data->press % 1000;
+        val->val1 = data->press / PRESS_RESOLUTION;
+        val->val2 = data->press % PRESS_RESOLUTION;
     } else if (chan == SENSOR_CHAN_IR) {
         val->val1 = data->has_motion;
         val->val2 = 0;
@@ -88,42 +88,51 @@ static int beata_channel_get(const struct device *dev, enum sensor_channel chan,
 static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
                           enum sensor_attribute attr, const struct sensor_value *val) {
     int ret;
+    int32_t raw_val;
     const struct beata_config *config = dev->config;
 
     if (attr == SENSOR_ATTR_UPPER_THRESH) {
         uint8_t target_reg;
         if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+            raw_val = val->val1 * TEMP_RESOLUTION + val->val2;
             target_reg = REG_INT_TEMP_HIGH;
         } else if (chan == SENSOR_CHAN_HUMIDITY) {
             target_reg = REG_INT_HUM_HIGH;
+            raw_val = val->val1 * HUM_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_PRESS) {
             target_reg = REG_INT_PRESS_HIGH;
+            raw_val = val->val1 * PRESS_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_PROX) {
             target_reg = REG_INT_SOUND_HIGH;
+            raw_val = val->val1;
         } else {
             printk("attr_set() not supported on this channel for SENSOR_ATTR_UPPER_THRESH.");
             return -ENOTSUP;
         }
 
-        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&val->val1), 4)) < 0) {
+        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&raw_val), 4)) < 0) {
             return ret;
         }
     } else if (attr == SENSOR_ATTR_LOWER_THRESH) {
         uint8_t target_reg;
         if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
             target_reg = REG_INT_TEMP_LOW;
+            raw_val = val->val1 * TEMP_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_HUMIDITY) {
             target_reg = REG_INT_HUM_LOW;
+            raw_val = val->val1 * HUM_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_PRESS) {
             target_reg = REG_INT_PRESS_LOW;
+            raw_val = val->val1 * HUM_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_PROX) {
             target_reg = REG_INT_SOUND_LOW;
+            raw_val = val->val1;
         } else {
             printk("attr_set() not supported on this channel for SENSOR_ATTR_LOWER_THRESH.");
             return -ENOTSUP;
         }
 
-        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&val->val1), 4)) < 0) {
+        if ((ret = i2c_burst_write_dt(&config->i2c, target_reg, (uint8_t *)(&raw_val), 4)) < 0) {
             return ret;
         }
     } else {
