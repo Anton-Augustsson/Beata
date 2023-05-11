@@ -43,7 +43,7 @@ static struct sensor_value threshold_hum_upper = {60};
 static struct sensor_value threshold_hum_lower = {5};
 static struct sensor_value threshold_press_upper = {130};
 static struct sensor_value threshold_press_lower = {100};
-static struct sensor_value threshold_sound_upper = {95};
+static struct sensor_value threshold_sound_upper = {1000};
 static struct sensor_value threshold_sound_lower = {5};
 
 static struct gpio_dt_spec climate_led = GPIO_DT_SPEC_GET(DT_ALIAS(climateled), gpios);

@@ -59,6 +59,7 @@
 
 static uint8_t motion_prev = 0;
 static int32_t no_threshold = INT32_MIN;
+static uint8_t prev_int_status = 0;
 
 static struct {
     uint8_t mem[256];
@@ -116,7 +117,6 @@ uint8_t check_threshold(uint8_t reg_low, uint8_t reg_high, uint8_t status_bit, i
     int32_t t_low, t_high;
     memcpy(&t_low, &context.mem[reg_low], sizeof(int32_t));
     memcpy(&t_high, &context.mem[reg_high], sizeof(int32_t));
-    printf("value: %d, t_low: %d, t_high: %d, status_bit: %d\n", value, t_low, t_high, status_bit);
     if ((t_low != no_threshold && t_low > value) || (t_high != no_threshold && t_high < value)) {
         return 1 << status_bit;
     }
@@ -210,19 +210,24 @@ void read_all_sensor_values() {
            whenever it changes. */
         if (context.mem[REG_INT_MOTION]) {
             if (motion_prev != has_motion.data) {
-                gpio_xor_mask(1 << INTERRUPT_PIN);
+                int_status |= 1 << SENSOR_NODE_INT_STATUS_MOTION;
             }
+
             motion_prev = has_motion.data;
-            int_status |= 1 << SENSOR_NODE_INT_STATUS_MOTION;
         }
 
         memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));
     }
-
     /* Update interrupt status based on current readings.
        If no interrupts will be triggered during this iteration,
        it will be set to 0. */
     memcpy(&context.mem[REG_INT_STATUS], &int_status, sizeof(int_status));
+
+    /* trigger alarm */
+    if (int_status != 0 && prev_int_status != int_status)
+        gpio_xor_mask(1 << INTERRUPT_PIN);
+
+    prev_int_status = int_status;
 }
 
 void sensors_init() {

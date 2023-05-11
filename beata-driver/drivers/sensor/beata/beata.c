@@ -103,8 +103,10 @@ static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
             target_reg = REG_INT_PRESS_HIGH;
             raw_val = val->val1 * PRESS_RESOLUTION + val->val2;
         } else if (chan == SENSOR_CHAN_PROX) {
+            printk("I AM IN\n");
             target_reg = REG_INT_SOUND_HIGH;
             raw_val = val->val1;
+            printk("RAW_VAL_SET: %d\n", raw_val);
         } else {
             printk("attr_set() not supported on this channel for SENSOR_ATTR_UPPER_THRESH.");
             return -ENOTSUP;
