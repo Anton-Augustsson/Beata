@@ -3,3 +3,9 @@ description: |
   humidity, sound, and motion.
 
 compatible: "zephyr,beata"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
