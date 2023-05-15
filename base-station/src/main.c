@@ -55,6 +55,199 @@ static struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios
 
 static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_cb_data;
 
+/* Function pointer primitive */ 
+typedef void (*state_func_t)( void );
+
+typedef struct _state_t
+{
+    uint8_t id;
+    state_func_t Enter;
+    state_func_t Do;
+    state_func_t Exit;
+    uint32_t delay_ms;
+} state_t;
+
+typedef enum _event_t 
+{
+    b1_evt = 0,
+    b2_evt = 1,
+    b3_evt = 2,
+    no_evt = 3 
+} event_t;
+
+/* The next three methods are for convenience, you might want to use them. */
+event_t get_event(void)
+{
+    event_t evt = no_evt; 
+	// TODO get event from queue
+    return evt; 
+}
+
+void leds_off () 
+{
+	// TODO
+}
+
+
+void do_state_v0(void) { 
+	// TODO
+}
+
+void enter_state_v0(void) { leds_off(); }
+void exit_state_v0(void) { leds_off(); }
+
+const state_t state_v0 = {
+    0, 
+    enter_state_v0,
+    do_state_v0,
+    exit_state_v0, 
+    300
+};
+
+void do_state_v1(void) { 
+	// TODO
+}
+
+void enter_state_v1(void) { leds_off(); }
+void exit_state_v1(void) { leds_off(); }
+
+const state_t state_v1 = {
+    0, 
+    enter_state_v1,
+    do_state_v1,
+    exit_state_v1, 
+    300
+};
+
+
+void do_state_v2(void) { 
+	// TODO
+}
+
+void enter_state_v2(void) { leds_off(); }
+void exit_state_v2(void) { leds_off(); }
+
+const state_t state_v2 = {
+    0, 
+    enter_state_v2,
+    do_state_v2,
+    exit_state_v2, 
+    300
+};
+
+
+void do_state_v3(void) { 
+	// TODO
+}
+
+void enter_state_v3(void) { leds_off(); }
+void exit_state_v3(void) { leds_off(); }
+
+const state_t state_v3 = {
+    0, 
+    enter_state_v3,
+    do_state_v3,
+    exit_state_v3, 
+    300
+};
+
+
+void do_state_v4(void) { 
+	// TODO
+}
+
+void enter_state_v4(void) { leds_off(); }
+void exit_state_v4(void) { leds_off(); }
+
+const state_t state_v4 = {
+    0, 
+    enter_state_v4,
+    do_state_v4,
+    exit_state_v4, 
+    300
+};
+
+
+void do_state_v5(void) { 
+	// TODO
+}
+
+void enter_state_v5(void) { leds_off(); }
+void exit_state_v5(void) { leds_off(); }
+
+const state_t state_v5 = {
+    0, 
+    enter_state_v5,
+    do_state_v5,
+    exit_state_v5, 
+    300
+};
+
+
+void do_state_c0(void) { 
+	// TODO
+}
+
+void enter_state_c0(void) { leds_off(); }
+void exit_state_c0(void) { leds_off(); }
+
+const state_t state_c0 = {
+    0, 
+    enter_state_c0,
+    do_state_c0,
+    exit_state_c0, 
+    300
+};
+
+
+void do_state_c1(void) { 
+	// TODO
+}
+
+void enter_state_c1(void) { leds_off(); }
+void exit_state_c1(void) { leds_off(); }
+
+const state_t state_c1 = {
+    0, 
+    enter_state_c1,
+    do_state_c1,
+    exit_state_c1, 
+    300
+};
+
+
+void do_state_c2(void) { 
+	// TODO
+}
+
+void enter_state_c2(void) { leds_off(); }
+void exit_state_c2(void) { leds_off(); }
+
+const state_t state_c2 = {
+    0, 
+    enter_state_c2,
+    do_state_c2,
+    exit_state_c2, 
+    300
+};
+
+// FIXME: B3 changes a value not a state
+const state_t state_table[9][4] = {
+    /*  STATE  B1          B2          B3         NO-EVT */
+    {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // visual mode
+    {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // visual mode  
+    {/* S2 */  state_c0,   state_v3,   state_v2,  state_v2}, // visual mode
+    {/* S3 */  state_c0,   state_v4,   state_v3,  state_v3}, // visual mode
+    {/* S4 */  state_c0,   state_v5,   state_v4,  state_v4}, // visual mode
+    {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode 
+    {/* S6 */  state_v0,   state_c1,   state_c0,  state_c0}, // config mode
+    {/* S7 */  state_v0,   state_c2,   state_c1,  state_c1}, // config mode
+    {/* S8 */  state_v0,   state_c0,   state_c2,  state_c2}  // config mode
+};
+
+
+
+/* Handle triggers */
 static void temp_trigger_handler(const struct device *dev, const struct sensor_trigger *trig) {
     printk("TEMPERATURE THRESHOLD NOW BAMS\n");
 }
