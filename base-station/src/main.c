@@ -23,9 +23,6 @@
 
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
-K_SEM_DEFINE(climate_btn_sem, 0, 1);
-K_SEM_DEFINE(sound_btn_sem, 0, 1);
-K_SEM_DEFINE(motion_btn_sem, 0, 1);
 
 // Global variables used
 volatile uint8_t update_conf = 0;
@@ -80,7 +77,7 @@ typedef struct _state_t {
 typedef enum _event_t {
     b1_evt = 0, 
     b2_evt = 1, 
-    b3_evt = 2,  // TODO: remove
+    b3_evt = 2,
     no_evt = 3 
 } event_t;
 
@@ -88,6 +85,24 @@ typedef enum _base_station_mode_t {
     visual_mode,
     config_mode
 } base_station_mode_t;
+
+typedef enum _prev_config_state_t {
+    motion_state,
+    climate_state,
+    sound_state,
+    configure_state
+} prev_config_state_t;
+
+// No global variables
+prev_config_state_t set_get_prev_config_state(prev_config_state_t prev_config_state_in) {
+    static prev_config_state_t prev_config_state = motion_state;
+
+    if (prev_config_state_in != configure_state) {
+        prev_config_state = prev_config_state_in;
+    }
+
+    return prev_config_state;
+}
 
 
 /* The next three methods are for convenience, you might want to use them. */
@@ -283,7 +298,10 @@ void do_state_c0(void) {
 }
 
 void enter_state_c0(void) { leds_off(); }
-void exit_state_c0(void) { leds_off(); }
+void exit_state_c0(void) { 
+    leds_off(); 
+    set_get_prev_config_state(motion_state);
+}
 
 const state_t state_c0 = {
     0, 
@@ -304,7 +322,10 @@ void do_state_c1(void) {
 }
 
 void enter_state_c1(void) { leds_off(); }
-void exit_state_c1(void) { leds_off(); }
+void exit_state_c1(void) { 
+    leds_off(); 
+    set_get_prev_config_state(sound_state);
+}
 
 const state_t state_c1 = {
     0, 
@@ -325,7 +346,10 @@ void do_state_c2(void) {
 }
 
 void enter_state_c2(void) { leds_off(); }
-void exit_state_c2(void) { leds_off(); }
+void exit_state_c2(void) { 
+    leds_off(); 
+    set_get_prev_config_state(sound_state);
+}
 
 
 const state_t state_c2 = {
@@ -336,8 +360,48 @@ const state_t state_c2 = {
     300
 };
 
+/* Change the value of the config */ 
+void do_state_cc(void) { 
+    leds_off(); 
+
+    prev_config_state_t prev_config_state = set_get_prev_config_state(configure_state);
+   
+    if (prev_config_state == sound_state) {
+        k_mutex_lock(&config_lock, K_FOREVER);
+        config.val1 ^= DISABLE_CLIMATE;
+        update_conf = 1;
+        k_mutex_unlock(&config_lock);
+    }
+    else if (prev_config_state == climate_state) {
+        k_mutex_lock(&config_lock, K_FOREVER);
+        config.val1 ^= DISABLE_SOUND;
+        update_conf = 1;
+        k_mutex_unlock(&config_lock);
+    }
+    else if (prev_config_state == motion_state) {
+        k_mutex_lock(&config_lock, K_FOREVER);
+        config.val1 ^= DISABLE_MOTION;
+        update_conf = 1;
+        k_mutex_unlock(&config_lock);
+    }
+
+    leds_show_config();
+}
+
+void enter_state_cc(void) { leds_off(); }
+void exit_state_cc(void) { leds_off(); }
+
+const state_t state_cc = {
+    0, 
+    enter_state_cc,
+    do_state_cc,
+    exit_state_cc, 
+    300
+};
+
+
 // FIXME: B3 changes a value not a state
-const state_t state_table[9][4] = {
+const state_t state_table[10][4] = {
     /*  STATE  B1          B2          B3         NO-EVT */
     {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // visual mode
     {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // visual mode  
@@ -345,9 +409,10 @@ const state_t state_table[9][4] = {
     {/* S3 */  state_c0,   state_v4,   state_v3,  state_v3}, // visual mode
     {/* S4 */  state_c0,   state_v5,   state_v4,  state_v4}, // visual mode
     {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode 
-    {/* S6 */  state_v0,   state_c1,   state_c0,  state_c0}, // config mode
-    {/* S7 */  state_v0,   state_c2,   state_c1,  state_c1}, // config mode
-    {/* S8 */  state_v0,   state_c0,   state_c2,  state_c2}  // config mode
+    {/* S6 */  state_v0,   state_c1,   state_cc,  state_c0}, // config mode
+    {/* S7 */  state_v0,   state_c2,   state_cc,  state_c1}, // config mode
+    {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2},  // config mode
+    {/* S9 */  state_v0,   state_c0,   state_cc,  state_cc}  // change config
 };
 
 
@@ -379,16 +444,12 @@ void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pin
         if (pins & BIT(climate_button.pin)) {
             event_t evt = b1_evt;
             k_queue_append(&event_queue, &evt);
-            //k_sem_give(&climate_btn_sem);
         } else if (pins & BIT(sound_button.pin)) {
             event_t evt = b2_evt;
             k_queue_append(&event_queue, &evt);
-            //k_sem_give(&sound_btn_sem);
         } else if (pins & BIT(motion_button.pin)) {
-            //k_sem_give(&conf_btn_sem);
-
-            //k_queue_append(&event_queue, b3_evt);
-            //k_sem_give(&motion_btn_sem);
+            event_t evt = b3_evt;
+            k_queue_append(&event_queue, &evt);
         }
     }
 }
@@ -449,35 +510,6 @@ void user_interface_task() {
         current_state = state_table[current_state.id][evt];
     }
 }
-
-//void button_task() {
-//    // Initialization of the ISR, button(s), and led(s)
-//    interface_init();
-//
-//    for (;;) {
-//        if (k_sem_take(&climate_btn_sem, K_NO_WAIT) == 0) {
-//            k_mutex_lock(&config_lock, K_FOREVER);
-//            gpio_pin_toggle_dt(&climate_led);
-//            config.val1 ^= DISABLE_CLIMATE;
-//            update_conf = 1;
-//            k_mutex_unlock(&config_lock);
-//        } else if (k_sem_take(&sound_btn_sem, K_NO_WAIT) == 0) {
-//            k_mutex_lock(&config_lock, K_FOREVER);
-//            gpio_pin_toggle_dt(&sound_led);
-//            config.val1 ^= DISABLE_SOUND;
-//            update_conf = 1;
-//            k_mutex_unlock(&config_lock);
-//        } else if (k_sem_take(&motion_btn_sem, K_NO_WAIT) == 0) {
-//            k_mutex_lock(&config_lock, K_FOREVER);
-//            gpio_pin_toggle_dt(&motion_led);
-//            config.val1 ^= DISABLE_MOTION;
-//            update_conf = 1;
-//            k_mutex_unlock(&config_lock);
-//        }
-//
-//        k_msleep(BUTTON_HANDLE_DELAY);
-//    }
-//}
 
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
