@@ -36,6 +36,7 @@ static struct sensor_trigger press_trig;
 static struct sensor_trigger sound_trig;
 static struct sensor_trigger motion_trig;
 static struct sensor_value config;
+static struct sensor_value temperature, humidity, pressure, motion, sound;
 static struct sensor_value sampling_frequency = {50};
 static struct sensor_value threshold_temp_upper = {30};
 static struct sensor_value threshold_temp_lower = {20};
@@ -55,6 +56,9 @@ static struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios
 
 static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_cb_data;
 
+/* Queue */
+K_QUEUE_DEFINE(event_queue);
+
 /* Function pointer primitive */ 
 typedef void (*state_func_t)( void );
 
@@ -69,9 +73,9 @@ typedef struct _state_t
 
 typedef enum _event_t 
 {
-    b1_evt = 0,
-    b2_evt = 1,
-    b3_evt = 2,
+    b1_evt = 0, 
+    b2_evt = 1, 
+    b3_evt = 2,  // TODO: remove
     no_evt = 3 
 } event_t;
 
@@ -79,18 +83,39 @@ typedef enum _event_t
 event_t get_event(void)
 {
     event_t evt = no_evt; 
-	// TODO get event from queue
+    void *adr = k_queue_get(&event_queue, K_FOREVER);
+    if (adr != NULL) {
+        evt = (event_t)adr;
+    }
     return evt; 
 }
 
 void leds_off () 
 {
-	// TODO
+    gpio_pin_set_dt(&climate_led, 0);
+    gpio_pin_set_dt(&sound_led, 0);
+    gpio_pin_set_dt(&motion_led, 0);
 }
 
-
+// Show motion
 void do_state_v0(void) { 
 	// TODO
+    if (humidity.val1 < 25) {
+        leds_off();
+        gpio_pin_set_dt(&climate_led, 1);
+    }
+    else if (humidity.val1 < 50) {
+        leds_off();
+        gpio_pin_set_dt(&climate_led, 1);
+        gpio_pin_set_dt(&sound_led, 1);
+    }
+    else {
+        leds_off();
+        gpio_pin_set_dt(&climate_led, 1);
+        gpio_pin_set_dt(&sound_led, 1);
+        gpio_pin_set_dt(&motion_led, 1);
+    }
+    printk("Humidity (%%): %d.%02d\n", humidity.val1, humidity.val2);
 }
 
 void enter_state_v0(void) { leds_off(); }
@@ -223,6 +248,7 @@ void do_state_c2(void) {
 void enter_state_c2(void) { leds_off(); }
 void exit_state_c2(void) { leds_off(); }
 
+
 const state_t state_c2 = {
     0, 
     enter_state_c2,
@@ -270,13 +296,20 @@ static void sound_trigger_handler(const struct device *dev, const struct sensor_
 void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY) {
         button_time = k_uptime_get_32();
-
+        
         if (pins & BIT(climate_button.pin)) {
-            k_sem_give(&climate_btn_sem);
+            event_t evt = b1_evt;
+            k_queue_append(&event_queue, &evt);
+            //k_sem_give(&climate_btn_sem);
         } else if (pins & BIT(sound_button.pin)) {
-            k_sem_give(&sound_btn_sem);
+            event_t evt = b2_evt;
+            k_queue_append(&event_queue, &evt);
+            //k_sem_give(&sound_btn_sem);
         } else if (pins & BIT(motion_button.pin)) {
-            k_sem_give(&motion_btn_sem);
+            //k_sem_give(&conf_btn_sem);
+
+            //k_queue_append(&event_queue, b3_evt);
+            //k_sem_give(&motion_btn_sem);
         }
     }
 }
@@ -300,6 +333,29 @@ void interface_init() {
     gpio_pin_set_dt(&sound_led, 1);
     gpio_pin_configure_dt(&motion_led, GPIO_OUTPUT_ACTIVE);
     gpio_pin_set_dt(&motion_led, 1);
+}
+
+void user_interface_task() {
+    // Do I need to innit anything??
+
+    // TODO loop here
+    state_t current_state = state_v0; // Initial state
+    event_t evt = no_evt;
+
+    for(;;) 
+    {
+        current_state.Enter();
+        evt = get_event();
+        while(current_state.id == state_table[current_state.id][evt].id)
+        {
+			printf("test");
+            current_state.Do();
+            k_msleep(current_state.delay_ms);
+            evt = get_event();
+        }
+        current_state.Exit();
+        current_state = state_table[current_state.id][evt];
+    }
 }
 
 void button_task() {
@@ -333,7 +389,7 @@ void button_task() {
 
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
-    struct sensor_value temperature, humidity, pressure, motion, sound;
+    //struct sensor_value temperature, humidity, pressure, motion, sound;
 
     printk("*******************************************\n");
     while (!device_is_ready(dev)) {
@@ -448,5 +504,6 @@ void main_task() {
     }
 }
 
-K_THREAD_DEFINE(button_thread, STACK_SIZE, button_task, NULL, NULL, NULL, 1, 0, 0);
+//K_THREAD_DEFINE(button_thread, STACK_SIZE, button_task, NULL, NULL, NULL, 1, 0, 0);
+K_THREAD_DEFINE(button_thread, STACK_SIZE, user_interface_task, NULL, NULL, NULL, 1, 0, 0);
 K_THREAD_DEFINE(main_thread, STACK_SIZE, main_task, NULL, NULL, NULL, 1, 0, 0);
