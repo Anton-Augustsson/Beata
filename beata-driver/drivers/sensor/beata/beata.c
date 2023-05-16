@@ -4,24 +4,26 @@
 static int beata_init(const struct device *dev) {
     int ret;
     uint8_t id;
- 	const struct beata_config *config = dev->config;
+    const struct beata_config *config = dev->config;
 
-	if (!device_is_ready(config->i2c.bus)) {
-		printk("I2C bus device not ready");
-		return -ENODEV;
-	}
+    if (!device_is_ready(config->i2c.bus)) {
+        printk("I2C bus device not ready");
+        return -ENODEV;
+    }
 
     printk("\n\nInitialising Beata.\n");
+
     if ((ret = i2c_burst_read_dt(&config->i2c, REG_ID, &id, 1)) < 0) {
         return ret;
     }
 
 #ifdef CONFIG_BEATA_TRIGGER
-	if (config->int_gpio.port) {
-		beata_trigger_init(dev);
-	}
-#endif
 
+    if (config->int_gpio.port) {
+        beata_trigger_init(dev);
+    }
+
+#endif
     return 0;
 }
 
@@ -93,6 +95,7 @@ static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
 
     if (attr == SENSOR_ATTR_UPPER_THRESH) {
         uint8_t target_reg;
+
         if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
             raw_val = val->val1 * TEMP_RESOLUTION + val->val2;
             target_reg = REG_INT_TEMP_HIGH;
@@ -117,6 +120,7 @@ static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
         }
     } else if (attr == SENSOR_ATTR_LOWER_THRESH) {
         uint8_t target_reg;
+
         if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
             target_reg = REG_INT_TEMP_LOW;
             raw_val = val->val1 * TEMP_RESOLUTION + val->val2;
@@ -151,12 +155,12 @@ static int beata_attr_set(const struct device *dev, enum sensor_channel chan,
             }
 
             if ((ret = i2c_burst_write_dt(&config->i2c, REG_SAMPLING_FREQUENCY,
-                                        (uint8_t *)(&val->val1), 2)) < 0) {
+                                          (uint8_t *)(&val->val1), 2)) < 0) {
                 return ret;
             }
         } else if (attr == SENSOR_ATTR_FEATURE_MASK) {
             if ((ret = i2c_burst_write_dt(&config->i2c, REG_DISABLED_SENSORS,
-                                        (uint8_t *)(&val->val1), 1)) < 0) {
+                                          (uint8_t *)(&val->val1), 1)) < 0) {
                 return ret;
             }
         } else {
@@ -209,8 +213,8 @@ static const struct sensor_driver_api beata_api = {
     static struct beata_data beata_data_##inst;              \
     static const struct beata_config beata_config_##inst = { \
         .i2c = I2C_DT_SPEC_INST_GET(inst),                   \
-        IF_ENABLED(CONFIG_BEATA_TRIGGER,				\
-            (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+        IF_ENABLED(CONFIG_BEATA_TRIGGER,                \
+            (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))    \
     };                                                       \
     DEVICE_DT_INST_DEFINE(inst, beata_init, NULL,            \
             &beata_data_##inst,                              \

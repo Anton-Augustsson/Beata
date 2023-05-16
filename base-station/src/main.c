@@ -63,8 +63,8 @@ static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_c
 /* Queue for events that will change the state */
 K_QUEUE_DEFINE(event_queue);
 
-/* Function pointer primitive */ 
-typedef void (*state_func_t)( void );
+/* Function pointer primitive */
+typedef void (*state_func_t)(void);
 
 typedef struct _state_t {
     uint8_t id;
@@ -75,10 +75,10 @@ typedef struct _state_t {
 } state_t;
 
 typedef enum _event_t {
-    b1_evt = 0, 
-    b2_evt = 1, 
+    b1_evt = 0,
+    b2_evt = 1,
     b3_evt = 2,
-    no_evt = 3 
+    no_evt = 3
 } event_t;
 
 typedef enum _base_station_mode_t {
@@ -107,12 +107,14 @@ prev_config_state_t set_get_prev_config_state(prev_config_state_t prev_config_st
 
 /* The next three methods are for convenience, you might want to use them. */
 event_t get_event(void) {
-    event_t evt = no_evt; 
+    event_t evt = no_evt;
     void *adr = k_queue_get(&event_queue, K_FOREVER);
+
     if (adr != NULL) {
         evt = (event_t)adr;
     }
-    return evt; 
+
+    return evt;
 }
 
 void show_leds_off() {
@@ -138,8 +140,7 @@ void leds_off() {
 void led_selected_mode_on(base_station_mode_t mode) {
     if (mode == visual_mode) {
         gpio_pin_set_dt(&led_selected_mode, 0);
-    }
-    else if (mode == config_mode) {
+    } else if (mode == config_mode) {
         gpio_pin_set_dt(&led_selected_mode, 1);
     }
 }
@@ -148,28 +149,28 @@ void leds_show_config() {
     if ((config.val1 ^ DISABLE_CLIMATE) != 0) {
         gpio_pin_set_dt(&led_show0, 1);
     }
+
     if ((config.val1 ^ DISABLE_SOUND) != 0) {
         gpio_pin_set_dt(&led_show1, 1);
     }
+
     if ((config.val1 ^ DISABLE_MOTION) != 0) {
         gpio_pin_set_dt(&led_show2, 1);
     }
 }
-/* Show motion */ 
-void do_state_v0(void) { 
-	// TODO: change to proper values and limits
+/* Show motion */
+void do_state_v0(void) {
+    // TODO: change to proper values and limits
     leds_off();
     led_selected_mode_on(visual_mode);
 
     if (humidity.val1 < 25) {
         gpio_pin_set_dt(&led_show0, 1);
-    }
-    else if (humidity.val1 < 50) {
+    } else if (humidity.val1 < 50) {
         gpio_pin_set_dt(&led_show0, 1);
         gpio_pin_set_dt(&led_show1, 1);
         gpio_pin_set_dt(&led_show2, 1);
-    }
-    else {
+    } else {
         gpio_pin_set_dt(&led_show0, 1);
         gpio_pin_set_dt(&led_show1, 1);
         gpio_pin_set_dt(&led_show2, 1);
@@ -178,207 +179,234 @@ void do_state_v0(void) {
     }
 }
 
-void enter_state_v0(void) { leds_off(); }
-void exit_state_v0(void) { leds_off(); }
+void enter_state_v0(void) {
+    leds_off();
+}
+void exit_state_v0(void) {
+    leds_off();
+}
 
 const state_t state_v0 = {
-    0, 
+    0,
     enter_state_v0,
     do_state_v0,
-    exit_state_v0, 
+    exit_state_v0,
     300
 };
 
-/* Show climate temp */ 
-void do_state_v1(void) { 
-	// TODO: same as v0
+/* Show climate temp */
+void do_state_v1(void) {
+    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
     gpio_pin_set_dt(&led_show0, 1);
 }
 
-void enter_state_v1(void) { leds_off(); }
-void exit_state_v1(void) { leds_off(); }
+void enter_state_v1(void) {
+    leds_off();
+}
+void exit_state_v1(void) {
+    leds_off();
+}
 
 const state_t state_v1 = {
-    0, 
+    0,
     enter_state_v1,
     do_state_v1,
-    exit_state_v1, 
+    exit_state_v1,
     300
 };
 
 
-/* Show climate humidity */ 
-void do_state_v2(void) { 
-	// TODO: same as v0
+/* Show climate humidity */
+void do_state_v2(void) {
+    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
     gpio_pin_set_dt(&led_show1, 1);
 }
 
-void enter_state_v2(void) { leds_off(); }
-void exit_state_v2(void) { leds_off(); }
+void enter_state_v2(void) {
+    leds_off();
+}
+void exit_state_v2(void) {
+    leds_off();
+}
 
 const state_t state_v2 = {
-    0, 
+    0,
     enter_state_v2,
     do_state_v2,
-    exit_state_v2, 
+    exit_state_v2,
     300
 };
 
 
-/* Show climate press */ 
-void do_state_v3(void) { 
-	// TODO: same as v0 but with instead pressure.val1
+/* Show climate press */
+void do_state_v3(void) {
+    // TODO: same as v0 but with instead pressure.val1
     leds_off();
     led_selected_mode_on(visual_mode);
     gpio_pin_set_dt(&led_show2, 1);
 }
 
-void enter_state_v3(void) { leds_off(); }
-void exit_state_v3(void) { leds_off(); }
+void enter_state_v3(void) {
+    leds_off();
+}
+void exit_state_v3(void) {
+    leds_off();
+}
 
 const state_t state_v3 = {
-    0, 
+    0,
     enter_state_v3,
     do_state_v3,
-    exit_state_v3, 
+    exit_state_v3,
     300
 };
 
 
-/* Show sound */ 
-void do_state_v4(void) { 
-	// TODO: same as v0
+/* Show sound */
+void do_state_v4(void) {
+    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
     gpio_pin_set_dt(&led_show3, 1);
 }
 
-void enter_state_v4(void) { leds_off(); }
-void exit_state_v4(void) { leds_off(); }
+void enter_state_v4(void) {
+    leds_off();
+}
+void exit_state_v4(void) {
+    leds_off();
+}
 
 const state_t state_v4 = {
-    0, 
+    0,
     enter_state_v4,
     do_state_v4,
-    exit_state_v4, 
+    exit_state_v4,
     300
 };
 
 
-/* Show config */ 
-void do_state_v5(void) { 
+/* Show config */
+void do_state_v5(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
     leds_show_config();
 }
 
-void enter_state_v5(void) { leds_off(); }
-void exit_state_v5(void) { leds_off(); }
+void enter_state_v5(void) {
+    leds_off();
+}
+void exit_state_v5(void) {
+    leds_off();
+}
 
 const state_t state_v5 = {
-    0, 
+    0,
     enter_state_v5,
     do_state_v5,
-    exit_state_v5, 
+    exit_state_v5,
     300
 };
 
 
-/* Toggle motion */ 
-void do_state_c0(void) { 
-	// TODO
+/* Toggle motion */
+void do_state_c0(void) {
+    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
     gpio_pin_set_dt(&led_selected0, 1);
     leds_show_config();
 }
 
-void enter_state_c0(void) { leds_off(); }
-void exit_state_c0(void) { 
-    leds_off(); 
+void enter_state_c0(void) {
+    leds_off();
+}
+void exit_state_c0(void) {
+    leds_off();
     set_get_prev_config_state(motion_state);
 }
 
 const state_t state_c0 = {
-    0, 
+    0,
     enter_state_c0,
     do_state_c0,
-    exit_state_c0, 
+    exit_state_c0,
     300
 };
 
 
-/* Toggle climate */ 
-void do_state_c1(void) { 
-	// TODO
+/* Toggle climate */
+void do_state_c1(void) {
+    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
     gpio_pin_set_dt(&led_selected1, 1);
     leds_show_config();
 }
 
-void enter_state_c1(void) { leds_off(); }
-void exit_state_c1(void) { 
-    leds_off(); 
+void enter_state_c1(void) {
+    leds_off();
+}
+void exit_state_c1(void) {
+    leds_off();
     set_get_prev_config_state(sound_state);
 }
 
 const state_t state_c1 = {
-    0, 
+    0,
     enter_state_c1,
     do_state_c1,
-    exit_state_c1, 
+    exit_state_c1,
     300
 };
 
 
-/* Toggle sound */ 
-void do_state_c2(void) { 
-	// TODO
+/* Toggle sound */
+void do_state_c2(void) {
+    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
     gpio_pin_set_dt(&led_selected2, 1);
     leds_show_config();
 }
 
-void enter_state_c2(void) { leds_off(); }
-void exit_state_c2(void) { 
-    leds_off(); 
+void enter_state_c2(void) {
+    leds_off();
+}
+void exit_state_c2(void) {
+    leds_off();
     set_get_prev_config_state(sound_state);
 }
 
 
 const state_t state_c2 = {
-    0, 
+    0,
     enter_state_c2,
     do_state_c2,
-    exit_state_c2, 
+    exit_state_c2,
     300
 };
 
-/* Change the value of the config */ 
-void do_state_cc(void) { 
-    leds_off(); 
-
+/* Change the value of the config */
+void do_state_cc(void) {
+    leds_off();
     prev_config_state_t prev_config_state = set_get_prev_config_state(configure_state);
-   
+
     if (prev_config_state == sound_state) {
         k_mutex_lock(&config_lock, K_FOREVER);
         config.val1 ^= DISABLE_CLIMATE;
         update_conf = 1;
         k_mutex_unlock(&config_lock);
-    }
-    else if (prev_config_state == climate_state) {
+    } else if (prev_config_state == climate_state) {
         k_mutex_lock(&config_lock, K_FOREVER);
         config.val1 ^= DISABLE_SOUND;
         update_conf = 1;
         k_mutex_unlock(&config_lock);
-    }
-    else if (prev_config_state == motion_state) {
+    } else if (prev_config_state == motion_state) {
         k_mutex_lock(&config_lock, K_FOREVER);
         config.val1 ^= DISABLE_MOTION;
         update_conf = 1;
@@ -388,14 +416,18 @@ void do_state_cc(void) {
     leds_show_config();
 }
 
-void enter_state_cc(void) { leds_off(); }
-void exit_state_cc(void) { leds_off(); }
+void enter_state_cc(void) {
+    leds_off();
+}
+void exit_state_cc(void) {
+    leds_off();
+}
 
 const state_t state_cc = {
-    0, 
+    0,
     enter_state_cc,
     do_state_cc,
-    exit_state_cc, 
+    exit_state_cc,
     300
 };
 
@@ -404,11 +436,11 @@ const state_t state_cc = {
 const state_t state_table[10][4] = {
     /*  STATE  B1          B2          B3         NO-EVT */
     {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // visual mode
-    {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // visual mode  
+    {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // visual mode
     {/* S2 */  state_c0,   state_v3,   state_v2,  state_v2}, // visual mode
     {/* S3 */  state_c0,   state_v4,   state_v3,  state_v3}, // visual mode
     {/* S4 */  state_c0,   state_v5,   state_v4,  state_v4}, // visual mode
-    {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode 
+    {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode
     {/* S6 */  state_v0,   state_c1,   state_cc,  state_c0}, // config mode
     {/* S7 */  state_v0,   state_c2,   state_cc,  state_c1}, // config mode
     {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2},  // config mode
@@ -440,7 +472,7 @@ static void sound_trigger_handler(const struct device *dev, const struct sensor_
 void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY) {
         button_time = k_uptime_get_32();
-        
+
         if (pins & BIT(climate_button.pin)) {
             event_t evt = b1_evt;
             k_queue_append(&event_queue, &evt);
@@ -468,7 +500,6 @@ void interface_init() {
     gpio_pin_interrupt_configure_dt(&motion_button, GPIO_INT_EDGE_TO_ACTIVE);
     gpio_init_callback(&motion_btn_cb_data, button_isr, BIT(motion_button.pin));
     gpio_add_callback(motion_button.port, &motion_btn_cb_data);
-
     /* Initialise led */
     gpio_pin_configure_dt(&led_show0, GPIO_OUTPUT_ACTIVE);
     gpio_pin_set_dt(&led_show0, 1);
@@ -492,20 +523,19 @@ void interface_init() {
 
 void user_interface_task() {
     interface_init();
-
     state_t current_state = state_v0; // Initial state
     event_t evt = no_evt;
 
-    for(;;) 
-    {
+    for (;;) {
         current_state.Enter();
         evt = get_event();
-        while(current_state.id == state_table[current_state.id][evt].id)
-        {
+
+        while (current_state.id == state_table[current_state.id][evt].id) {
             current_state.Do();
             k_msleep(current_state.delay_ms);
             evt = get_event();
         }
+
         current_state.Exit();
         current_state = state_table[current_state.id][evt];
     }
@@ -514,8 +544,8 @@ void user_interface_task() {
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
     //struct sensor_value temperature, humidity, pressure, motion, sound;
-
     printk("*******************************************\n");
+
     while (!device_is_ready(dev)) {
         printk("Sensor: device not ready.\n");
         k_msleep(SLEEP_TIME);
@@ -525,59 +555,60 @@ void main_task() {
     printk("Configuring sensor node(s)...\n");
     printk("Setting sampling frequency...\n");
     sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &sampling_frequency);
-
 #ifdef CONFIG_BEATA_TRIGGER
     int ret;
     printk("Enabling trigger for temperature...\n");
     temp_trig.type = SENSOR_TRIG_THRESHOLD;
-	temp_trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
-	ret = sensor_trigger_set(dev, &temp_trig, temp_trigger_handler);
+    temp_trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
+    ret = sensor_trigger_set(dev, &temp_trig, temp_trigger_handler);
+
     if (ret < 0) {
-		printk("Temperature trigger set failed: %d\n", ret);
+        printk("Temperature trigger set failed: %d\n", ret);
     }
 
     printk("Enabling trigger for humidity...\n");
     hum_trig.type = SENSOR_TRIG_THRESHOLD;
-	hum_trig.chan = SENSOR_CHAN_HUMIDITY;
-	ret = sensor_trigger_set(dev, &hum_trig, hum_trigger_handler);
+    hum_trig.chan = SENSOR_CHAN_HUMIDITY;
+    ret = sensor_trigger_set(dev, &hum_trig, hum_trigger_handler);
+
     if (ret < 0) {
-		printk("Humidity trigger set failed: %d\n", ret);
+        printk("Humidity trigger set failed: %d\n", ret);
     }
 
     printk("Enabling trigger for pressure...\n");
     press_trig.type = SENSOR_TRIG_THRESHOLD;
-	press_trig.chan = SENSOR_CHAN_PRESS;
-	ret = sensor_trigger_set(dev, &press_trig, press_trigger_handler);
+    press_trig.chan = SENSOR_CHAN_PRESS;
+    ret = sensor_trigger_set(dev, &press_trig, press_trigger_handler);
+
     if (ret < 0) {
-		printk("Pressure trigger set failed: %d\n", ret);
+        printk("Pressure trigger set failed: %d\n", ret);
     }
 
     printk("Enabling trigger for sound level...\n");
     sound_trig.type = SENSOR_TRIG_THRESHOLD;
-	sound_trig.chan = SENSOR_CHAN_PROX;
-	ret = sensor_trigger_set(dev, &sound_trig, sound_trigger_handler);
+    sound_trig.chan = SENSOR_CHAN_PROX;
+    ret = sensor_trigger_set(dev, &sound_trig, sound_trigger_handler);
+
     if (ret < 0) {
-		printk("Sound trigger set failed: %d\n", ret);
+        printk("Sound trigger set failed: %d\n", ret);
     }
 
     printk("Enabling trigger for motion...\n");
     motion_trig.type = SENSOR_TRIG_MOTION;
-	motion_trig.chan = SENSOR_CHAN_IR;
-	ret = sensor_trigger_set(dev, &motion_trig, motion_trigger_handler);
+    motion_trig.chan = SENSOR_CHAN_IR;
+    ret = sensor_trigger_set(dev, &motion_trig, motion_trigger_handler);
+
     if (ret < 0) {
-		printk("Motion trigger set failed: %d\n", ret);
+        printk("Motion trigger set failed: %d\n", ret);
     }
 
     printk("Setting trigger thresholds...\n");
     sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &threshold_temp_upper);
     sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &threshold_temp_lower);
-
     sensor_attr_set(dev, SENSOR_CHAN_HUMIDITY, SENSOR_ATTR_UPPER_THRESH, &threshold_hum_upper);
     sensor_attr_set(dev, SENSOR_CHAN_HUMIDITY, SENSOR_ATTR_LOWER_THRESH, &threshold_hum_lower);
-
     sensor_attr_set(dev, SENSOR_CHAN_PRESS, SENSOR_ATTR_UPPER_THRESH, &threshold_press_upper);
     sensor_attr_set(dev, SENSOR_CHAN_PRESS, SENSOR_ATTR_LOWER_THRESH, &threshold_press_lower);
-
     sensor_attr_set(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_UPPER_THRESH, &threshold_sound_upper);
     sensor_attr_set(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_LOWER_THRESH, &threshold_sound_lower);
 #endif

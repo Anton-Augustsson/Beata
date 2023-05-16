@@ -117,15 +117,16 @@ uint8_t check_threshold(uint8_t reg_low, uint8_t reg_high, uint8_t status_bit, i
     int32_t t_low, t_high;
     memcpy(&t_low, &context.mem[reg_low], sizeof(int32_t));
     memcpy(&t_high, &context.mem[reg_high], sizeof(int32_t));
+
     if ((t_low != no_threshold && t_low > value) || (t_high != no_threshold && t_high < value)) {
         return 1 << status_bit;
     }
+
     return 0;
 }
 
 void read_all_sensor_values() {
     uint8_t int_status = 0;
-
     // Clear memory to ensure that disabled sensors always produce zeros
     memset(&context.mem[REG_TEMP], 0, sizeof(int32_t));
     memset(&context.mem[REG_HUM], 0, sizeof(int32_t));
@@ -154,25 +155,23 @@ void read_all_sensor_values() {
 
         if (context.mem[REG_INT_THRESHOLD]) {
             int_status |= check_threshold(
-                REG_INT_TEMP_LOW,
-                REG_INT_TEMP_HIGH,
-                SENSOR_NODE_INT_STATUS_TEMP,
-                temp_celsius.data
-            );
-
+                              REG_INT_TEMP_LOW,
+                              REG_INT_TEMP_HIGH,
+                              SENSOR_NODE_INT_STATUS_TEMP,
+                              temp_celsius.data
+                          );
             int_status |= check_threshold(
-                REG_INT_HUM_LOW,
-                REG_INT_HUM_HIGH,
-                SENSOR_NODE_INT_STATUS_HUM,
-                humidity.data
-            );
-
+                              REG_INT_HUM_LOW,
+                              REG_INT_HUM_HIGH,
+                              SENSOR_NODE_INT_STATUS_HUM,
+                              humidity.data
+                          );
             int_status |= check_threshold(
-                REG_INT_PRESS_LOW,
-                REG_INT_PRESS_HIGH,
-                SENSOR_NODE_INT_STATUS_PRESS,
-                press.data
-            );
+                              REG_INT_PRESS_LOW,
+                              REG_INT_PRESS_HIGH,
+                              SENSOR_NODE_INT_STATUS_PRESS,
+                              press.data
+                          );
         }
 
         memcpy(&context.mem[REG_TEMP], &temp_celsius.data, sizeof(int32_t));
@@ -189,11 +188,11 @@ void read_all_sensor_values() {
 
         if (context.mem[REG_INT_THRESHOLD]) {
             int_status |= check_threshold(
-                REG_INT_SOUND_LOW,
-                REG_INT_SOUND_HIGH,
-                SENSOR_NODE_INT_STATUS_SOUND,
-                (int32_t)sound_level.data
-            );
+                              REG_INT_SOUND_LOW,
+                              REG_INT_SOUND_HIGH,
+                              SENSOR_NODE_INT_STATUS_SOUND,
+                              (int32_t)sound_level.data
+                          );
         }
 
         memcpy(&context.mem[REG_SOUND], &sound_level.data, sizeof(uint16_t));
@@ -218,14 +217,16 @@ void read_all_sensor_values() {
 
         memcpy(&context.mem[REG_MOTION], &has_motion.data, sizeof(uint8_t));
     }
+
     /* Update interrupt status based on current readings.
        If no interrupts will be triggered during this iteration,
        it will be set to 0. */
     memcpy(&context.mem[REG_INT_STATUS], &int_status, sizeof(int_status));
 
     /* trigger alarm */
-    if (int_status != 0 && prev_int_status != int_status)
+    if (int_status != 0 && prev_int_status != int_status) {
         gpio_xor_mask(1 << INTERRUPT_PIN);
+    }
 
     prev_int_status = int_status;
 }
@@ -254,11 +255,9 @@ int main() {
     adc_init();
     sensors_init();
     base_station_i2c_init();
-
     uint16_t sampling_time = 0;
     printf("Starting sensor node...\n");
     memset(&context.mem[REG_ID], 17, 1);
-
     // Reset all interrupt thresholds to a known value.
     // This way we can differentiate between a set and unset value.
     memcpy(&context.mem[REG_INT_TEMP_LOW], &no_threshold, sizeof(no_threshold));
@@ -273,9 +272,7 @@ int main() {
     for (;;) {
         // Reset interrupt status
         memset(&context.mem[REG_INT_STATUS], 0, 1);
-
         read_all_sensor_values();
-
         // TODO: This operation is not safe
         memcpy(&sampling_time, &context.mem[REG_SAMPLING_FREQUENCY], sizeof(uint16_t));
         sleep_ms(sampling_time);
