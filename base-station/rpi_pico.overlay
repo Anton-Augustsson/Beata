@@ -1,8 +1,14 @@
 / {
     aliases {
-        climateled = &led0;
-        soundled = &led1;
-        motionled = &led2;
+        ledshow0 = &led0;
+        ledshow1 = &led1;
+        ledshow2 = &led2;
+        ledshow3 = &led3;
+        ledshow4 = &led4;
+        ledselect0 = &led5;
+        ledselect1 = &led6;
+        ledselect2 = &led7;
+        ledselect3 = &led8;
         sw0 = &button0;
         sw1 = &button1;
         sw2 = &button2;
@@ -18,6 +24,24 @@
         };
         led2: led_2 {
             gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        };
+        led3: led_3 {
+            gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+        };
+        led4: led_4 {
+            gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+        };
+        led5: led_5 {
+            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+        };
+        led6: led_6 {
+            gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+        };
+        led7: led_7 {
+            gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+        };
+        led8: led_8 {
+            gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
         };
     };
 
