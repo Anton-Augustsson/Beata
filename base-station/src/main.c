@@ -110,18 +110,15 @@ prev_config_state_t set_get_prev_config_state(prev_config_state_t prev_config_st
 event_t get_event(void) {
     if (k_sem_take(&mode_btn_sem, K_NO_WAIT) == 0) {
         printk("Get_event: mode_btn b1_evt\n");
-        return b1_evt; 
-    }
-    else if (k_sem_take(&select_btn_sem, K_NO_WAIT) == 0) {
+        return b1_evt;
+    } else if (k_sem_take(&select_btn_sem, K_NO_WAIT) == 0) {
         printk("Get_event: select_btn b2_evt\n");
-        return b2_evt; 
-    }
-    else if (k_sem_take(&config_btn_sem, K_NO_WAIT) == 0) {
+        return b2_evt;
+    } else if (k_sem_take(&config_btn_sem, K_NO_WAIT) == 0) {
         printk("Get_event: config_btn b3_evt\n");
-        return b3_evt; 
-    }
-    else {
-        return no_evt; 
+        return b3_evt;
+    } else {
+        return no_evt;
     }
 }
 
@@ -157,9 +154,11 @@ void leds_show_config() {
     if ((config.val1 & DISABLE_CLIMATE) == 0) {
         gpio_pin_set_dt(&led_show0, 1);
     }
+
     if ((config.val1 & DISABLE_SOUND) == 0) {
         gpio_pin_set_dt(&led_show1, 1);
     }
+
     if ((config.val1 & DISABLE_MOTION) == 0) {
         gpio_pin_set_dt(&led_show2, 1);
     }
@@ -185,14 +184,14 @@ void do_state_v0(void) {
     }
 }
 
-void enter_state_v0(void) { 
+void enter_state_v0(void) {
     printk("Entering Show motion\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v0(void) { 
+void exit_state_v0(void) {
     printk("Exiting Show motion\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v0 = {
@@ -211,18 +210,18 @@ void do_state_v1(void) {
     gpio_pin_set_dt(&led_show0, 1);
 }
 
-void enter_state_v1(void) { 
+void enter_state_v1(void) {
     printk("Entering Show climate temp\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v1(void) { 
+void exit_state_v1(void) {
     printk("Exiting Show climate temp\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v1 = {
-    1, 
+    1,
     enter_state_v1,
     do_state_v1,
     exit_state_v1,
@@ -238,18 +237,18 @@ void do_state_v2(void) {
     gpio_pin_set_dt(&led_show1, 1);
 }
 
-void enter_state_v2(void) { 
+void enter_state_v2(void) {
     printk("Entering Show climate humidity\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v2(void) { 
+void exit_state_v2(void) {
     printk("Exiting Show climate humidity\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v2 = {
-    2, 
+    2,
     enter_state_v2,
     do_state_v2,
     exit_state_v2,
@@ -265,18 +264,18 @@ void do_state_v3(void) {
     gpio_pin_set_dt(&led_show2, 1);
 }
 
-void enter_state_v3(void) { 
+void enter_state_v3(void) {
     printk("Entering Show climate humidity\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v3(void) { 
+void exit_state_v3(void) {
     printk("Exiting Show climate humidity\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v3 = {
-    3, 
+    3,
     enter_state_v3,
     do_state_v3,
     exit_state_v3,
@@ -292,17 +291,17 @@ void do_state_v4(void) {
     gpio_pin_set_dt(&led_show3, 1);
 }
 
-void enter_state_v4(void) { 
+void enter_state_v4(void) {
     printk("Entering Show sound\n");
-    leds_off(); 
+    leds_off();
 }
-void exit_state_v4(void) { 
+void exit_state_v4(void) {
     printk("Exiting Show sound\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v4 = {
-    4, 
+    4,
     enter_state_v4,
     do_state_v4,
     exit_state_v4,
@@ -317,18 +316,18 @@ void do_state_v5(void) {
     leds_show_config();
 }
 
-void enter_state_v5(void) { 
+void enter_state_v5(void) {
     printk("Entering Show config\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v5(void) { 
+void exit_state_v5(void) {
     printk("Exiting Show config\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v5 = {
-    5, 
+    5,
     enter_state_v5,
     do_state_v5,
     exit_state_v5,
@@ -345,19 +344,19 @@ void do_state_c0(void) {
     leds_show_config();
 }
 
-void enter_state_c0(void) { 
+void enter_state_c0(void) {
     printk("Entering Toggle motion\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_c0(void) { 
+void exit_state_c0(void) {
     printk("Exiting Toggle motion\n");
-    leds_off(); 
+    leds_off();
     set_get_prev_config_state(motion_state);
 }
 
 const state_t state_c0 = {
-    6, 
+    6,
     enter_state_c0,
     do_state_c0,
     exit_state_c0,
@@ -374,19 +373,19 @@ void do_state_c1(void) {
     leds_show_config();
 }
 
-void enter_state_c1(void) { 
+void enter_state_c1(void) {
     printk("Entering Toggle climate\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_c1(void) { 
+void exit_state_c1(void) {
     printk("Exiting Toggle climate\n");
-    leds_off(); 
+    leds_off();
     set_get_prev_config_state(sound_state);
 }
 
 const state_t state_c1 = {
-    7, 
+    7,
     enter_state_c1,
     do_state_c1,
     exit_state_c1,
@@ -403,20 +402,20 @@ void do_state_c2(void) {
     leds_show_config();
 }
 
-void enter_state_c2(void) { 
+void enter_state_c2(void) {
     printk("Entering Toggle sound\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_c2(void) { 
+void exit_state_c2(void) {
     printk("Exiting Toggle sound\n");
-    leds_off(); 
+    leds_off();
     set_get_prev_config_state(sound_state);
 }
 
 
 const state_t state_c2 = {
-    8, 
+    8,
     enter_state_c2,
     do_state_c2,
     exit_state_c2,
@@ -448,18 +447,18 @@ void do_state_cc(void) {
     leds_show_config();
 }
 
-void enter_state_cc(void) { 
+void enter_state_cc(void) {
     printk("Entering change config\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_cc(void) { 
+void exit_state_cc(void) {
     printk("Exiting change config\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_cc = {
-    9, 
+    9,
     enter_state_cc,
     do_state_cc,
     exit_state_cc,
@@ -506,7 +505,7 @@ static void sound_trigger_handler(const struct device *dev, const struct sensor_
 void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY) {
         button_time = k_uptime_get_32();
- 
+
         if (pins & BIT(mode_button.pin)) {
             k_sem_give(&mode_btn_sem);
         } else if (pins & BIT(select_button.pin)) {
@@ -531,7 +530,6 @@ void interface_init() {
     gpio_pin_interrupt_configure_dt(&config_button, GPIO_INT_EDGE_TO_ACTIVE);
     gpio_init_callback(&config_btn_cb_data, button_isr, BIT(config_button.pin));
     gpio_add_callback(config_button.port, &config_btn_cb_data);
-
     /* Initialise led */
     gpio_pin_configure_dt(&led_show0, GPIO_OUTPUT_ACTIVE);
     gpio_pin_set_dt(&led_show0, 1);
@@ -565,21 +563,19 @@ void user_interface_task() {
     humidity.val2 = 0;
     pressure.val1 = 0;
     pressure.val2 = 0;
-    motion.val1 = 0; 
-    motion.val2 = 0; 
+    motion.val1 = 0;
+    motion.val2 = 0;
     sound.val1 = 0;
     sound.val2 = 0;
-
     state_t current_state = state_v0; // Initial state
     event_t evt = no_evt;
 
-    for(;;) 
-    {
+    for (;;) {
         printk("New iteration\n");
         current_state.Enter();
         evt = get_event();
-        while(current_state.id == state_table[current_state.id][evt].id)
-        {
+
+        while (current_state.id == state_table[current_state.id][evt].id) {
             printk("Do\n");
             current_state.Do();
             k_msleep(current_state.delay_ms);
