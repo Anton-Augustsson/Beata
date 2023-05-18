@@ -9,6 +9,7 @@
 #define ERROR_MARGIN 200
 #define BUTTON_DEBOUNCE_DELAY 50
 #define BUTTON_HANDLE_DELAY 1
+#define NUM_OF_SHOW_LEDS 5
 
 #define SLEEP_TIME 1000
 #define DISABLE_CLIMATE (1 << 0)
@@ -76,11 +77,26 @@ typedef struct _state_t {
 } state_t;
 
 typedef enum _event_t {
-    b1_evt = 0,
-    b2_evt = 1,
-    b3_evt = 2,
+    b1_evt = 0, // mode btn
+    b2_evt = 1, // select btn
+    b3_evt = 2, // config btn
     no_evt = 3
 } event_t;
+
+typedef enum _visual_select_t {
+    motion_select,
+    climate_temp_select,
+    climate_hum_select,
+    climate_press_select,
+    sound_select,
+    config_select
+} visual_select_t;
+
+typedef enum _toggle_config_select_t {
+    toggle_motion_select,
+    toggle_climate_select,
+    toggle_sound_select,
+} toggle_config_select_t;
 
 typedef enum _base_station_mode_t {
     visual_mode,
@@ -122,7 +138,34 @@ event_t get_event(void) {
     }
 }
 
-void show_leds_off() {
+//////////////////////////////////////////////////////////////////////////////
+/* BEGIN: LEDs should only be modified within this section to proven't bugs */
+//////////////////////////////////////////////////////////////////////////////
+
+/* Initialize all LEDs */
+void leds_init() {
+    gpio_pin_configure_dt(&led_show0, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_show0, 1);
+    gpio_pin_configure_dt(&led_show1, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_show1, 1);
+    gpio_pin_configure_dt(&led_show2, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_show2, 1);
+    gpio_pin_configure_dt(&led_show3, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_show3, 1);
+    gpio_pin_configure_dt(&led_show4, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_show4, 1);
+    gpio_pin_configure_dt(&led_selected0, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_selected0, 1);
+    gpio_pin_configure_dt(&led_selected1, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_selected1, 1);
+    gpio_pin_configure_dt(&led_selected2, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_selected2, 1);
+    gpio_pin_configure_dt(&led_selected_mode, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&led_selected_mode, 1);
+}
+
+/* Turn off all show LEDs */
+void leds_show_off() {
     gpio_pin_set_dt(&led_show0, 0);
     gpio_pin_set_dt(&led_show1, 0);
     gpio_pin_set_dt(&led_show2, 0);
@@ -130,18 +173,28 @@ void show_leds_off() {
     gpio_pin_set_dt(&led_show4, 0);
 }
 
-void select_leds_off() {
+/*  Turn off all selected LEDs except mode.
+    Does not shut down select_mode since this function is used to clear 
+    which visual or configuration has been selected, not mode.
+*/
+void leds_select_off() {
     gpio_pin_set_dt(&led_selected0, 0);
     gpio_pin_set_dt(&led_selected1, 0);
     gpio_pin_set_dt(&led_selected2, 0);
+}
+
+/* Turn off all LEDs.
+   Call every time a state is entered, do, and exiting to prevent bugs.
+*/
+void leds_off() {
+    leds_show_off();
+    leds_select_off();
     gpio_pin_set_dt(&led_selected_mode, 0);
 }
 
-void leds_off() {
-    show_leds_off();
-    select_leds_off();
-}
-
+/* Turn on selected mode LED if visual_mode and off if config_mode 
+    Call every time you in the do function for all states.
+*/
 void led_selected_mode_on(base_station_mode_t mode) {
     if (mode == visual_mode) {
         gpio_pin_set_dt(&led_selected_mode, 0);
@@ -150,7 +203,12 @@ void led_selected_mode_on(base_station_mode_t mode) {
     }
 }
 
+/* Turn on show LEDs (0, 1, 2) that correspond to each config option 
+    Turns off other show LEDs.
+*/
 void leds_show_config() {
+    leds_show_off();
+
     if ((config.val1 & DISABLE_CLIMATE) == 0) {
         gpio_pin_set_dt(&led_show0, 1);
     }
@@ -163,25 +221,76 @@ void leds_show_config() {
         gpio_pin_set_dt(&led_show2, 1);
     }
 }
+
+/* Turn on show LEDs that correspond to each visual_select.
+    Turns off all other show LEDs that is not used to display 
+    the visual_select.
+*/
+void leds_show_visual_select(visual_select_t visual_select) {
+    leds_select_off();
+
+    if (visual_select == motion_select) {
+        gpio_pin_set_dt(&led_selected0, 1);
+    }
+    else if (visual_select == climate_temp_select) {
+        gpio_pin_set_dt(&led_selected1, 1);
+    }
+    else if (visual_select == climate_hum_select) {
+        gpio_pin_set_dt(&led_selected0, 1);
+        gpio_pin_set_dt(&led_selected1, 1);
+    }
+    else if (visual_select == climate_press_select) {
+        gpio_pin_set_dt(&led_selected1, 1);
+        gpio_pin_set_dt(&led_selected2, 1);
+    }
+    else if (visual_select == sound_select) {
+        gpio_pin_set_dt(&led_selected2, 1);
+    }
+}
+
+/* Turn on show LEDs that correspond to each toggle_config_select.
+    Turns off all other show LEDs that is not used to display 
+    the toggle_config_select.
+*/
+void leds_show_toggle_config_select(toggle_config_select_t toggle_config_select) {
+    leds_select_off();
+
+    if (toggle_config_select == toggle_motion_select) {
+        gpio_pin_set_dt(&led_selected0, 1);
+    }
+    else if (toggle_config_select == toggle_climate_select) {
+        gpio_pin_set_dt(&led_selected1, 1);
+    }
+    else if (toggle_config_select == toggle_sound_select) {
+        gpio_pin_set_dt(&led_selected2, 1);
+    }
+}
+
+void leds_show_level(uint16_t value, uint16_t min_level, uint16_t max_level) {
+    leds_show_off();
+    int num_of_led_to_turn_on = ((value - min_level) * NUM_OF_SHOW_LEDS) / (max_level - min_level);
+    
+    gpio_pin_set_dt(&led_show0, 1); // One LED is always on
+    for (int i = 2; i <= num_of_led_to_turn_on; i++) {
+        if (i == 2) { gpio_pin_set_dt(&led_show1, 1); }
+        else if (i == 3) { gpio_pin_set_dt(&led_show2, 1); }
+        else if (i == 4) { gpio_pin_set_dt(&led_show3, 1); }
+        else if (i == 5) { gpio_pin_set_dt(&led_show4, 1); }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+/* END: LEDs should only be modified within this section to proven't bugs */
+////////////////////////////////////////////////////////////////////////////
+
+
 /* Show motion */
 void do_state_v0(void) {
-    // TODO: change to proper values and limits
     leds_off();
     led_selected_mode_on(visual_mode);
-
-    if (humidity.val1 < 25) {
-        gpio_pin_set_dt(&led_show0, 1);
-    } else if (humidity.val1 < 50) {
-        gpio_pin_set_dt(&led_show0, 1);
-        gpio_pin_set_dt(&led_show1, 1);
-        gpio_pin_set_dt(&led_show2, 1);
-    } else {
-        gpio_pin_set_dt(&led_show0, 1);
-        gpio_pin_set_dt(&led_show1, 1);
-        gpio_pin_set_dt(&led_show2, 1);
-        gpio_pin_set_dt(&led_show3, 1);
-        gpio_pin_set_dt(&led_show4, 1);
-    }
+    leds_show_visual_select(motion_select); 
+    // TODO: have proper limits and values
+    leds_show_level((uint16_t)motion.val1, 0, 100);
 }
 
 void enter_state_v0(void) {
@@ -204,10 +313,11 @@ const state_t state_v0 = {
 
 /* Show climate temp */
 void do_state_v1(void) {
-    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
-    gpio_pin_set_dt(&led_show0, 1);
+    leds_show_visual_select(climate_temp_select); 
+    // TODO: have proper limits and values
+    leds_show_level((uint16_t)temperature.val1, 0, 100);
 }
 
 void enter_state_v1(void) {
@@ -231,10 +341,11 @@ const state_t state_v1 = {
 
 /* Show climate humidity */
 void do_state_v2(void) {
-    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
-    gpio_pin_set_dt(&led_show1, 1);
+    leds_show_visual_select(climate_hum_select);  
+    // TODO: have proper limits and values
+    leds_show_level((uint16_t)humidity.val1, 0, 100);
 }
 
 void enter_state_v2(void) {
@@ -256,22 +367,23 @@ const state_t state_v2 = {
 };
 
 
-/* Show climate press */
+/* Show climate pressure */
 void do_state_v3(void) {
-    // TODO: same as v0 but with instead pressure.val1
     leds_off();
     led_selected_mode_on(visual_mode);
-    gpio_pin_set_dt(&led_show2, 1);
+    leds_show_visual_select(climate_press_select); 
+    // TODO: have proper limits and values
+    leds_show_level((uint16_t)pressure.val1, 0, 100);
 }
 
-void enter_state_v3(void) {
-    printk("Entering Show climate humidity\n");
-    leds_off();
+void enter_state_v3(void) { 
+    printk("Entering Show climate pressure\n");
+    leds_off(); 
 }
 
-void exit_state_v3(void) {
-    printk("Exiting Show climate humidity\n");
-    leds_off();
+void exit_state_v3(void) { 
+    printk("Exiting Show climate pressure\n");
+    leds_off(); 
 }
 
 const state_t state_v3 = {
@@ -285,10 +397,11 @@ const state_t state_v3 = {
 
 /* Show sound */
 void do_state_v4(void) {
-    // TODO: same as v0
     leds_off();
     led_selected_mode_on(visual_mode);
-    gpio_pin_set_dt(&led_show3, 1);
+    leds_show_visual_select(sound_select);
+    // TODO: have proper limits and values
+    leds_show_level((uint16_t)sound.val1, 0, 100);
 }
 
 void enter_state_v4(void) {
@@ -313,6 +426,7 @@ const state_t state_v4 = {
 void do_state_v5(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
+    leds_show_visual_select(config_select); 
     leds_show_config();
 }
 
@@ -337,10 +451,9 @@ const state_t state_v5 = {
 
 /* Toggle motion */
 void do_state_c0(void) {
-    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
-    gpio_pin_set_dt(&led_selected0, 1);
+    leds_show_toggle_config_select(toggle_motion_select);
     leds_show_config();
 }
 
@@ -366,10 +479,9 @@ const state_t state_c0 = {
 
 /* Toggle climate */
 void do_state_c1(void) {
-    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
-    gpio_pin_set_dt(&led_selected1, 1);
+    leds_show_toggle_config_select(toggle_climate_select);
     leds_show_config();
 }
 
@@ -395,10 +507,9 @@ const state_t state_c1 = {
 
 /* Toggle sound */
 void do_state_c2(void) {
-    // TODO
     leds_off();
     led_selected_mode_on(config_mode);
-    gpio_pin_set_dt(&led_selected2, 1);
+    leds_show_toggle_config_select(toggle_sound_select);
     leds_show_config();
 }
 
@@ -425,6 +536,7 @@ const state_t state_c2 = {
 /* Change the value of the config */
 void do_state_cc(void) {
     leds_off();
+    led_selected_mode_on(config_mode);
     prev_config_state_t prev_config_state = set_get_prev_config_state(configure_state);
 
     if (prev_config_state == sound_state) {
@@ -468,15 +580,15 @@ const state_t state_cc = {
 
 const state_t state_table[10][4] = {
     /*  STATE  B1          B2          B3         NO-EVT */
-    {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // visual mode
-    {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // visual mode
-    {/* S2 */  state_c0,   state_v3,   state_v2,  state_v2}, // visual mode
-    {/* S3 */  state_c0,   state_v4,   state_v3,  state_v3}, // visual mode
-    {/* S4 */  state_c0,   state_v5,   state_v4,  state_v4}, // visual mode
-    {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode
-    {/* S6 */  state_v0,   state_c1,   state_cc,  state_c0}, // config mode
-    {/* S7 */  state_v0,   state_c2,   state_cc,  state_c1}, // config mode
-    {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2}, // config mode
+    {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // show motion
+    {/* S1 */  state_c0,   state_v2,   state_v1,  state_v1}, // show temp
+    {/* S2 */  state_c0,   state_v3,   state_v2,  state_v2}, // show humidity
+    {/* S3 */  state_c0,   state_v4,   state_v3,  state_v3}, // show pressure
+    {/* S4 */  state_c0,   state_v5,   state_v4,  state_v4}, // show sound
+    {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // show config
+    {/* S6 */  state_v0,   state_c1,   state_cc,  state_c0}, // toggle motion
+    {/* S7 */  state_v0,   state_c2,   state_cc,  state_c1}, // toggle climate
+    {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2}, // toggle sound
     {/* S9 */  state_v0,   state_c0,   state_cc,  state_cc}  // change config
 };
 
@@ -531,43 +643,28 @@ void interface_init() {
     gpio_init_callback(&config_btn_cb_data, button_isr, BIT(config_button.pin));
     gpio_add_callback(config_button.port, &config_btn_cb_data);
     /* Initialise led */
-    gpio_pin_configure_dt(&led_show0, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_show0, 1);
-    gpio_pin_configure_dt(&led_show1, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_show1, 1);
-    gpio_pin_configure_dt(&led_show2, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_show2, 1);
-    gpio_pin_configure_dt(&led_show3, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_show3, 1);
-    gpio_pin_configure_dt(&led_show4, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_show4, 1);
-    gpio_pin_configure_dt(&led_selected0, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_selected0, 1);
-    gpio_pin_configure_dt(&led_selected1, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_selected1, 1);
-    gpio_pin_configure_dt(&led_selected2, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_selected2, 1);
-    gpio_pin_configure_dt(&led_selected_mode, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_set_dt(&led_selected_mode, 1);
+    leds_init();
 }
 
 void user_interface_task() {
     printk("Started\n");
     interface_init();
+
     // TODO: remove
     config.val1 = 0;
     config.val2 = 0;
     temperature.val1 = 0;
     temperature.val2 = 0;
-    humidity.val1 = 0;
+    humidity.val1 = 10;
     humidity.val2 = 0;
-    pressure.val1 = 0;
+    pressure.val1 = 40;
     pressure.val2 = 0;
-    motion.val1 = 0;
+    motion.val1 = 60;
     motion.val2 = 0;
-    sound.val1 = 0;
+    sound.val1 = 90;
     sound.val2 = 0;
-    state_t current_state = state_v0; // Initial state
+
+    state_t current_state = state_v0;
     event_t evt = no_evt;
 
     for (;;) {
@@ -575,8 +672,7 @@ void user_interface_task() {
         current_state.Enter();
         evt = get_event();
 
-        while (current_state.id == state_table[current_state.id][evt].id) {
-            printk("Do\n");
+        while(current_state.id == state_table[current_state.id][evt].id) {
             current_state.Do();
             k_msleep(current_state.delay_ms);
             evt = get_event();
