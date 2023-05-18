@@ -174,7 +174,7 @@ void leds_show_off() {
 }
 
 /*  Turn off all selected LEDs except mode.
-    Does not shut down select_mode since this function is used to clear 
+    Does not shut down select_mode since this function is used to clear
     which visual or configuration has been selected, not mode.
 */
 void leds_select_off() {
@@ -192,7 +192,7 @@ void leds_off() {
     gpio_pin_set_dt(&led_selected_mode, 0);
 }
 
-/* Turn on selected mode LED if visual_mode and off if config_mode 
+/* Turn on selected mode LED if visual_mode and off if config_mode
     Call every time you in the do function for all states.
 */
 void led_selected_mode_on(base_station_mode_t mode) {
@@ -203,7 +203,7 @@ void led_selected_mode_on(base_station_mode_t mode) {
     }
 }
 
-/* Turn on show LEDs (0, 1, 2) that correspond to each config option 
+/* Turn on show LEDs (0, 1, 2) that correspond to each config option
     Turns off other show LEDs.
 */
 void leds_show_config() {
@@ -223,7 +223,7 @@ void leds_show_config() {
 }
 
 /* Turn on show LEDs that correspond to each visual_select.
-    Turns off all other show LEDs that is not used to display 
+    Turns off all other show LEDs that is not used to display
     the visual_select.
 */
 void leds_show_visual_select(visual_select_t visual_select) {
@@ -231,25 +231,21 @@ void leds_show_visual_select(visual_select_t visual_select) {
 
     if (visual_select == motion_select) {
         gpio_pin_set_dt(&led_selected0, 1);
-    }
-    else if (visual_select == climate_temp_select) {
+    } else if (visual_select == climate_temp_select) {
         gpio_pin_set_dt(&led_selected1, 1);
-    }
-    else if (visual_select == climate_hum_select) {
+    } else if (visual_select == climate_hum_select) {
         gpio_pin_set_dt(&led_selected0, 1);
         gpio_pin_set_dt(&led_selected1, 1);
-    }
-    else if (visual_select == climate_press_select) {
+    } else if (visual_select == climate_press_select) {
         gpio_pin_set_dt(&led_selected1, 1);
         gpio_pin_set_dt(&led_selected2, 1);
-    }
-    else if (visual_select == sound_select) {
+    } else if (visual_select == sound_select) {
         gpio_pin_set_dt(&led_selected2, 1);
     }
 }
 
 /* Turn on show LEDs that correspond to each toggle_config_select.
-    Turns off all other show LEDs that is not used to display 
+    Turns off all other show LEDs that is not used to display
     the toggle_config_select.
 */
 void leds_show_toggle_config_select(toggle_config_select_t toggle_config_select) {
@@ -257,11 +253,9 @@ void leds_show_toggle_config_select(toggle_config_select_t toggle_config_select)
 
     if (toggle_config_select == toggle_motion_select) {
         gpio_pin_set_dt(&led_selected0, 1);
-    }
-    else if (toggle_config_select == toggle_climate_select) {
+    } else if (toggle_config_select == toggle_climate_select) {
         gpio_pin_set_dt(&led_selected1, 1);
-    }
-    else if (toggle_config_select == toggle_sound_select) {
+    } else if (toggle_config_select == toggle_sound_select) {
         gpio_pin_set_dt(&led_selected2, 1);
     }
 }
@@ -269,13 +263,18 @@ void leds_show_toggle_config_select(toggle_config_select_t toggle_config_select)
 void leds_show_level(uint16_t value, uint16_t min_level, uint16_t max_level) {
     leds_show_off();
     int num_of_led_to_turn_on = ((value - min_level) * NUM_OF_SHOW_LEDS) / (max_level - min_level);
-    
     gpio_pin_set_dt(&led_show0, 1); // One LED is always on
+
     for (int i = 2; i <= num_of_led_to_turn_on; i++) {
-        if (i == 2) { gpio_pin_set_dt(&led_show1, 1); }
-        else if (i == 3) { gpio_pin_set_dt(&led_show2, 1); }
-        else if (i == 4) { gpio_pin_set_dt(&led_show3, 1); }
-        else if (i == 5) { gpio_pin_set_dt(&led_show4, 1); }
+        if (i == 2) {
+            gpio_pin_set_dt(&led_show1, 1);
+        } else if (i == 3) {
+            gpio_pin_set_dt(&led_show2, 1);
+        } else if (i == 4) {
+            gpio_pin_set_dt(&led_show3, 1);
+        } else if (i == 5) {
+            gpio_pin_set_dt(&led_show4, 1);
+        }
     }
 }
 
@@ -288,7 +287,7 @@ void leds_show_level(uint16_t value, uint16_t min_level, uint16_t max_level) {
 void do_state_v0(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
-    leds_show_visual_select(motion_select); 
+    leds_show_visual_select(motion_select);
     // TODO: have proper limits and values
     leds_show_level((uint16_t)motion.val1, 0, 100);
 }
@@ -315,7 +314,7 @@ const state_t state_v0 = {
 void do_state_v1(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
-    leds_show_visual_select(climate_temp_select); 
+    leds_show_visual_select(climate_temp_select);
     // TODO: have proper limits and values
     leds_show_level((uint16_t)temperature.val1, 0, 100);
 }
@@ -343,7 +342,7 @@ const state_t state_v1 = {
 void do_state_v2(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
-    leds_show_visual_select(climate_hum_select);  
+    leds_show_visual_select(climate_hum_select);
     // TODO: have proper limits and values
     leds_show_level((uint16_t)humidity.val1, 0, 100);
 }
@@ -371,19 +370,19 @@ const state_t state_v2 = {
 void do_state_v3(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
-    leds_show_visual_select(climate_press_select); 
+    leds_show_visual_select(climate_press_select);
     // TODO: have proper limits and values
     leds_show_level((uint16_t)pressure.val1, 0, 100);
 }
 
-void enter_state_v3(void) { 
+void enter_state_v3(void) {
     printk("Entering Show climate pressure\n");
-    leds_off(); 
+    leds_off();
 }
 
-void exit_state_v3(void) { 
+void exit_state_v3(void) {
     printk("Exiting Show climate pressure\n");
-    leds_off(); 
+    leds_off();
 }
 
 const state_t state_v3 = {
@@ -426,7 +425,7 @@ const state_t state_v4 = {
 void do_state_v5(void) {
     leds_off();
     led_selected_mode_on(visual_mode);
-    leds_show_visual_select(config_select); 
+    leds_show_visual_select(config_select);
     leds_show_config();
 }
 
@@ -649,7 +648,6 @@ void interface_init() {
 void user_interface_task() {
     printk("Started\n");
     interface_init();
-
     // TODO: remove
     config.val1 = 0;
     config.val2 = 0;
@@ -663,7 +661,6 @@ void user_interface_task() {
     motion.val2 = 0;
     sound.val1 = 90;
     sound.val2 = 0;
-
     state_t current_state = state_v0;
     event_t evt = no_evt;
 
@@ -672,7 +669,7 @@ void user_interface_task() {
         current_state.Enter();
         evt = get_event();
 
-        while(current_state.id == state_table[current_state.id][evt].id) {
+        while (current_state.id == state_table[current_state.id][evt].id) {
             current_state.Do();
             k_msleep(current_state.delay_ms);
             evt = get_event();
