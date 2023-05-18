@@ -23,6 +23,9 @@
 
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
+K_SEM_DEFINE(mode_btn_sem, 0, 1);
+K_SEM_DEFINE(select_btn_sem, 0, 1);
+K_SEM_DEFINE(config_btn_sem, 0, 1);
 
 // Global variables used
 volatile uint8_t update_conf = 0;
@@ -54,14 +57,12 @@ static struct gpio_dt_spec led_selected1 = GPIO_DT_SPEC_GET(DT_ALIAS(ledselect1)
 static struct gpio_dt_spec led_selected2 = GPIO_DT_SPEC_GET(DT_ALIAS(ledselect2), gpios);
 static struct gpio_dt_spec led_selected_mode = GPIO_DT_SPEC_GET(DT_ALIAS(ledselect3), gpios);
 
-static struct gpio_dt_spec climate_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
-static struct gpio_dt_spec sound_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
-static struct gpio_dt_spec motion_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
+static struct gpio_dt_spec mode_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static struct gpio_dt_spec select_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
+static struct gpio_dt_spec config_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
 
-static struct gpio_callback climate_btn_cb_data, sound_btn_cb_data, motion_btn_cb_data;
+static struct gpio_callback mode_btn_cb_data, select_btn_cb_data, config_btn_cb_data;
 
-/* Queue for events that will change the state */
-K_QUEUE_DEFINE(event_queue);
 
 /* Function pointer primitive */
 typedef void (*state_func_t)(void);
@@ -107,14 +108,21 @@ prev_config_state_t set_get_prev_config_state(prev_config_state_t prev_config_st
 
 /* The next three methods are for convenience, you might want to use them. */
 event_t get_event(void) {
-    event_t evt = no_evt;
-    void *adr = k_queue_get(&event_queue, K_FOREVER);
-
-    if (adr != NULL) {
-        evt = (event_t)adr;
+    if (k_sem_take(&mode_btn_sem, K_NO_WAIT) == 0) {
+        printk("Get_event: mode_btn b1_evt\n");
+        return b1_evt; 
     }
-
-    return evt;
+    else if (k_sem_take(&select_btn_sem, K_NO_WAIT) == 0) {
+        printk("Get_event: select_btn b2_evt\n");
+        return b2_evt; 
+    }
+    else if (k_sem_take(&config_btn_sem, K_NO_WAIT) == 0) {
+        printk("Get_event: config_btn b3_evt\n");
+        return b3_evt; 
+    }
+    else {
+        return no_evt; 
+    }
 }
 
 void show_leds_off() {
@@ -146,15 +154,13 @@ void led_selected_mode_on(base_station_mode_t mode) {
 }
 
 void leds_show_config() {
-    if ((config.val1 ^ DISABLE_CLIMATE) != 0) {
+    if ((config.val1 & DISABLE_CLIMATE) == 0) {
         gpio_pin_set_dt(&led_show0, 1);
     }
-
-    if ((config.val1 ^ DISABLE_SOUND) != 0) {
+    if ((config.val1 & DISABLE_SOUND) == 0) {
         gpio_pin_set_dt(&led_show1, 1);
     }
-
-    if ((config.val1 ^ DISABLE_MOTION) != 0) {
+    if ((config.val1 & DISABLE_MOTION) == 0) {
         gpio_pin_set_dt(&led_show2, 1);
     }
 }
@@ -179,11 +185,14 @@ void do_state_v0(void) {
     }
 }
 
-void enter_state_v0(void) {
-    leds_off();
+void enter_state_v0(void) { 
+    printk("Entering Show motion\n");
+    leds_off(); 
 }
-void exit_state_v0(void) {
-    leds_off();
+
+void exit_state_v0(void) { 
+    printk("Exiting Show motion\n");
+    leds_off(); 
 }
 
 const state_t state_v0 = {
@@ -202,15 +211,18 @@ void do_state_v1(void) {
     gpio_pin_set_dt(&led_show0, 1);
 }
 
-void enter_state_v1(void) {
-    leds_off();
+void enter_state_v1(void) { 
+    printk("Entering Show climate temp\n");
+    leds_off(); 
 }
-void exit_state_v1(void) {
-    leds_off();
+
+void exit_state_v1(void) { 
+    printk("Exiting Show climate temp\n");
+    leds_off(); 
 }
 
 const state_t state_v1 = {
-    0,
+    1, 
     enter_state_v1,
     do_state_v1,
     exit_state_v1,
@@ -226,15 +238,18 @@ void do_state_v2(void) {
     gpio_pin_set_dt(&led_show1, 1);
 }
 
-void enter_state_v2(void) {
-    leds_off();
+void enter_state_v2(void) { 
+    printk("Entering Show climate humidity\n");
+    leds_off(); 
 }
-void exit_state_v2(void) {
-    leds_off();
+
+void exit_state_v2(void) { 
+    printk("Exiting Show climate humidity\n");
+    leds_off(); 
 }
 
 const state_t state_v2 = {
-    0,
+    2, 
     enter_state_v2,
     do_state_v2,
     exit_state_v2,
@@ -250,15 +265,18 @@ void do_state_v3(void) {
     gpio_pin_set_dt(&led_show2, 1);
 }
 
-void enter_state_v3(void) {
-    leds_off();
+void enter_state_v3(void) { 
+    printk("Entering Show climate humidity\n");
+    leds_off(); 
 }
-void exit_state_v3(void) {
-    leds_off();
+
+void exit_state_v3(void) { 
+    printk("Exiting Show climate humidity\n");
+    leds_off(); 
 }
 
 const state_t state_v3 = {
-    0,
+    3, 
     enter_state_v3,
     do_state_v3,
     exit_state_v3,
@@ -274,15 +292,17 @@ void do_state_v4(void) {
     gpio_pin_set_dt(&led_show3, 1);
 }
 
-void enter_state_v4(void) {
-    leds_off();
+void enter_state_v4(void) { 
+    printk("Entering Show sound\n");
+    leds_off(); 
 }
-void exit_state_v4(void) {
-    leds_off();
+void exit_state_v4(void) { 
+    printk("Exiting Show sound\n");
+    leds_off(); 
 }
 
 const state_t state_v4 = {
-    0,
+    4, 
     enter_state_v4,
     do_state_v4,
     exit_state_v4,
@@ -297,15 +317,18 @@ void do_state_v5(void) {
     leds_show_config();
 }
 
-void enter_state_v5(void) {
-    leds_off();
+void enter_state_v5(void) { 
+    printk("Entering Show config\n");
+    leds_off(); 
 }
-void exit_state_v5(void) {
-    leds_off();
+
+void exit_state_v5(void) { 
+    printk("Exiting Show config\n");
+    leds_off(); 
 }
 
 const state_t state_v5 = {
-    0,
+    5, 
     enter_state_v5,
     do_state_v5,
     exit_state_v5,
@@ -322,16 +345,19 @@ void do_state_c0(void) {
     leds_show_config();
 }
 
-void enter_state_c0(void) {
-    leds_off();
+void enter_state_c0(void) { 
+    printk("Entering Toggle motion\n");
+    leds_off(); 
 }
-void exit_state_c0(void) {
-    leds_off();
+
+void exit_state_c0(void) { 
+    printk("Exiting Toggle motion\n");
+    leds_off(); 
     set_get_prev_config_state(motion_state);
 }
 
 const state_t state_c0 = {
-    0,
+    6, 
     enter_state_c0,
     do_state_c0,
     exit_state_c0,
@@ -348,16 +374,19 @@ void do_state_c1(void) {
     leds_show_config();
 }
 
-void enter_state_c1(void) {
-    leds_off();
+void enter_state_c1(void) { 
+    printk("Entering Toggle climate\n");
+    leds_off(); 
 }
-void exit_state_c1(void) {
-    leds_off();
+
+void exit_state_c1(void) { 
+    printk("Exiting Toggle climate\n");
+    leds_off(); 
     set_get_prev_config_state(sound_state);
 }
 
 const state_t state_c1 = {
-    0,
+    7, 
     enter_state_c1,
     do_state_c1,
     exit_state_c1,
@@ -374,17 +403,20 @@ void do_state_c2(void) {
     leds_show_config();
 }
 
-void enter_state_c2(void) {
-    leds_off();
+void enter_state_c2(void) { 
+    printk("Entering Toggle sound\n");
+    leds_off(); 
 }
-void exit_state_c2(void) {
-    leds_off();
+
+void exit_state_c2(void) { 
+    printk("Exiting Toggle sound\n");
+    leds_off(); 
     set_get_prev_config_state(sound_state);
 }
 
 
 const state_t state_c2 = {
-    0,
+    8, 
     enter_state_c2,
     do_state_c2,
     exit_state_c2,
@@ -416,15 +448,18 @@ void do_state_cc(void) {
     leds_show_config();
 }
 
-void enter_state_cc(void) {
-    leds_off();
+void enter_state_cc(void) { 
+    printk("Entering change config\n");
+    leds_off(); 
 }
-void exit_state_cc(void) {
-    leds_off();
+
+void exit_state_cc(void) { 
+    printk("Exiting change config\n");
+    leds_off(); 
 }
 
 const state_t state_cc = {
-    0,
+    9, 
     enter_state_cc,
     do_state_cc,
     exit_state_cc,
@@ -432,7 +467,6 @@ const state_t state_cc = {
 };
 
 
-// FIXME: B3 changes a value not a state
 const state_t state_table[10][4] = {
     /*  STATE  B1          B2          B3         NO-EVT */
     {/* S0 */  state_c0,   state_v1,   state_v0,  state_v0}, // visual mode
@@ -443,7 +477,7 @@ const state_t state_table[10][4] = {
     {/* S5 */  state_c0,   state_v0,   state_v5,  state_v5}, // visual mode
     {/* S6 */  state_v0,   state_c1,   state_cc,  state_c0}, // config mode
     {/* S7 */  state_v0,   state_c2,   state_cc,  state_c1}, // config mode
-    {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2},  // config mode
+    {/* S8 */  state_v0,   state_c0,   state_cc,  state_c2}, // config mode
     {/* S9 */  state_v0,   state_c0,   state_cc,  state_cc}  // change config
 };
 
@@ -472,34 +506,32 @@ static void sound_trigger_handler(const struct device *dev, const struct sensor_
 void button_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if ((k_uptime_get_32() - button_time) > BUTTON_DEBOUNCE_DELAY) {
         button_time = k_uptime_get_32();
-
-        if (pins & BIT(climate_button.pin)) {
-            event_t evt = b1_evt;
-            k_queue_append(&event_queue, &evt);
-        } else if (pins & BIT(sound_button.pin)) {
-            event_t evt = b2_evt;
-            k_queue_append(&event_queue, &evt);
-        } else if (pins & BIT(motion_button.pin)) {
-            event_t evt = b3_evt;
-            k_queue_append(&event_queue, &evt);
+ 
+        if (pins & BIT(mode_button.pin)) {
+            k_sem_give(&mode_btn_sem);
+        } else if (pins & BIT(select_button.pin)) {
+            k_sem_give(&select_btn_sem);
+        } else if (pins & BIT(config_button.pin)) {
+            k_sem_give(&config_btn_sem);
         }
     }
 }
 
 void interface_init() {
     /* Initialise buttons */
-    gpio_pin_configure_dt(&climate_button, GPIO_INPUT);
-    gpio_pin_interrupt_configure_dt(&climate_button, GPIO_INT_EDGE_TO_ACTIVE);
-    gpio_init_callback(&climate_btn_cb_data, button_isr, BIT(climate_button.pin));
-    gpio_add_callback(climate_button.port, &climate_btn_cb_data);
-    gpio_pin_configure_dt(&sound_button, GPIO_INPUT);
-    gpio_pin_interrupt_configure_dt(&sound_button, GPIO_INT_EDGE_TO_ACTIVE);
-    gpio_init_callback(&sound_btn_cb_data, button_isr, BIT(sound_button.pin));
-    gpio_add_callback(sound_button.port, &sound_btn_cb_data);
-    gpio_pin_configure_dt(&motion_button, GPIO_INPUT);
-    gpio_pin_interrupt_configure_dt(&motion_button, GPIO_INT_EDGE_TO_ACTIVE);
-    gpio_init_callback(&motion_btn_cb_data, button_isr, BIT(motion_button.pin));
-    gpio_add_callback(motion_button.port, &motion_btn_cb_data);
+    gpio_pin_configure_dt(&mode_button, GPIO_INPUT);
+    gpio_pin_interrupt_configure_dt(&mode_button, GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&mode_btn_cb_data, button_isr, BIT(mode_button.pin));
+    gpio_add_callback(mode_button.port, &mode_btn_cb_data);
+    gpio_pin_configure_dt(&select_button, GPIO_INPUT);
+    gpio_pin_interrupt_configure_dt(&select_button, GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&select_btn_cb_data, button_isr, BIT(select_button.pin));
+    gpio_add_callback(select_button.port, &select_btn_cb_data);
+    gpio_pin_configure_dt(&config_button, GPIO_INPUT);
+    gpio_pin_interrupt_configure_dt(&config_button, GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&config_btn_cb_data, button_isr, BIT(config_button.pin));
+    gpio_add_callback(config_button.port, &config_btn_cb_data);
+
     /* Initialise led */
     gpio_pin_configure_dt(&led_show0, GPIO_OUTPUT_ACTIVE);
     gpio_pin_set_dt(&led_show0, 1);
@@ -522,15 +554,33 @@ void interface_init() {
 }
 
 void user_interface_task() {
+    printk("Started\n");
     interface_init();
+    // TODO: remove
+    config.val1 = 0;
+    config.val2 = 0;
+    temperature.val1 = 0;
+    temperature.val2 = 0;
+    humidity.val1 = 0;
+    humidity.val2 = 0;
+    pressure.val1 = 0;
+    pressure.val2 = 0;
+    motion.val1 = 0; 
+    motion.val2 = 0; 
+    sound.val1 = 0;
+    sound.val2 = 0;
+
     state_t current_state = state_v0; // Initial state
     event_t evt = no_evt;
 
-    for (;;) {
+    for(;;) 
+    {
+        printk("New iteration\n");
         current_state.Enter();
         evt = get_event();
-
-        while (current_state.id == state_table[current_state.id][evt].id) {
+        while(current_state.id == state_table[current_state.id][evt].id)
+        {
+            printk("Do\n");
             current_state.Do();
             k_msleep(current_state.delay_ms);
             evt = get_event();
@@ -661,4 +711,4 @@ void main_task() {
 
 //K_THREAD_DEFINE(button_thread, STACK_SIZE, button_task, NULL, NULL, NULL, 1, 0, 0);
 K_THREAD_DEFINE(button_thread, STACK_SIZE, user_interface_task, NULL, NULL, NULL, 1, 0, 0);
-K_THREAD_DEFINE(main_thread, STACK_SIZE, main_task, NULL, NULL, NULL, 1, 0, 0);
+//K_THREAD_DEFINE(main_thread, STACK_SIZE, main_task, NULL, NULL, NULL, 1, 0, 0);
