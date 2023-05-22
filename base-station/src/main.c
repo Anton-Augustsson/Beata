@@ -210,17 +210,19 @@ void led_selected_mode_on(base_station_mode_t mode) {
 void leds_show_config() {
     leds_show_off();
 
-    if ((config.val1 & DISABLE_CLIMATE) == 0) {
+    if ((config.val1 & DISABLE_MOTION) == 0) {
         gpio_pin_set_dt(&led_show0, 1);
     }
 
-    if ((config.val1 & DISABLE_SOUND) == 0) {
+    if ((config.val1 & DISABLE_CLIMATE) == 0) {
         gpio_pin_set_dt(&led_show1, 1);
     }
 
-    if ((config.val1 & DISABLE_MOTION) == 0) {
+    if ((config.val1 & DISABLE_SOUND) == 0) {
         gpio_pin_set_dt(&led_show2, 1);
     }
+
+    
 }
 
 /* Turn on show LEDs that correspond to each visual_select.
@@ -494,7 +496,7 @@ void enter_state_c1(void) {
 void exit_state_c1(void) {
     printk("Exiting Toggle climate\n");
     leds_off();
-    set_get_prev_config_state(sound_state);
+    set_get_prev_config_state(climate_state);
 }
 
 const state_t state_c1 = {
@@ -540,21 +542,24 @@ void do_state_cc(void) {
     led_selected_mode_on(config_mode);
     prev_config_state_t prev_config_state = set_get_prev_config_state(configure_state);
 
-    if (prev_config_state == sound_state) {
-        k_mutex_lock(&config_lock, K_FOREVER);
-        config.val1 ^= DISABLE_CLIMATE;
-        update_conf = 1;
-        k_mutex_unlock(&config_lock);
-    } else if (prev_config_state == climate_state) {
-        k_mutex_lock(&config_lock, K_FOREVER);
-        config.val1 ^= DISABLE_SOUND;
-        update_conf = 1;
-        k_mutex_unlock(&config_lock);
-    } else if (prev_config_state == motion_state) {
+    if (prev_config_state == motion_state) {
         k_mutex_lock(&config_lock, K_FOREVER);
         config.val1 ^= DISABLE_MOTION;
         update_conf = 1;
         k_mutex_unlock(&config_lock);
+        k_sem_give(&select_btn_sem);
+    } else if (prev_config_state == climate_state) {
+        k_mutex_lock(&config_lock, K_FOREVER);
+        config.val1 ^= DISABLE_CLIMATE;
+        update_conf = 1;
+        k_mutex_unlock(&config_lock);
+        k_sem_give(&select_btn_sem);
+    } else if (prev_config_state == sound_state) {
+        k_mutex_lock(&config_lock, K_FOREVER);
+        config.val1 ^= DISABLE_SOUND;
+        update_conf = 1;
+        k_mutex_unlock(&config_lock);
+        k_sem_give(&select_btn_sem);
     }
 
     leds_show_config();
