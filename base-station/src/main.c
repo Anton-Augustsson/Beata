@@ -221,8 +221,6 @@ void leds_show_config() {
     if ((config.val1 & DISABLE_SOUND) == 0) {
         gpio_pin_set_dt(&led_show2, 1);
     }
-
-    
 }
 
 /* Turn on show LEDs that correspond to each visual_select.
