@@ -741,8 +741,8 @@ void main_task() {
 #endif
     printk("*******************************************\n\n");
     k_msleep(3000);
-
     static uint8_t iteration = 0;
+
     for (;;) {
         if (update_conf) {
             printk("Writing new configurations...\n");
