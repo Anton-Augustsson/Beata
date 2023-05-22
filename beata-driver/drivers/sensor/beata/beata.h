@@ -80,8 +80,8 @@ struct beata_data {
 
 #ifdef CONFIG_BEATA_TRIGGER
     struct k_work work;
-	const struct device *dev;
-	struct gpio_callback gpio_cb;
+    const struct device *dev;
+    struct gpio_callback gpio_cb;
 
     const struct sensor_trigger *temp_trig;
     const struct sensor_trigger *hum_trig;
@@ -99,7 +99,7 @@ struct beata_data {
 
 int beata_trigger_init(const struct device *dev);
 int beata_trigger_set(const struct device *dev,
-    const struct sensor_trigger *trig,
-	sensor_trigger_handler_t handler);
+                      const struct sensor_trigger *trig,
+                      sensor_trigger_handler_t handler);
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BEATA__ */
