@@ -11,7 +11,7 @@
 #define BUTTON_HANDLE_DELAY 1
 #define NUM_OF_SHOW_LEDS 5
 
-#define SLEEP_TIME 1000
+#define SLEEP_TIME 50
 #define DISABLE_CLIMATE (1 << 0)
 #define DISABLE_SOUND   (1 << 1)
 #define DISABLE_MOTION  (1 << 2)
@@ -21,6 +21,7 @@
 #define UCEL_PER_MCEL 1000
 #define TEMP_INITIAL_CEL 25
 #define TEMP_WINDOW_HALF_UCEL 500000
+
 
 /* Synchronization parameters */
 K_MUTEX_DEFINE(config_lock);
@@ -38,7 +39,7 @@ static struct sensor_trigger sound_trig;
 static struct sensor_trigger motion_trig;
 static struct sensor_value config;
 static struct sensor_value temperature, humidity, pressure, motion, sound;
-static struct sensor_value sampling_frequency = {50};
+static struct sensor_value sampling_frequency = {10};
 static struct sensor_value threshold_temp_upper = {30};
 static struct sensor_value threshold_temp_lower = {20};
 static struct sensor_value threshold_hum_upper = {60};
@@ -46,7 +47,7 @@ static struct sensor_value threshold_hum_lower = {5};
 static struct sensor_value threshold_press_upper = {130};
 static struct sensor_value threshold_press_lower = {100};
 static struct sensor_value threshold_sound_upper = {1000};
-static struct sensor_value threshold_sound_lower = {5};
+static struct sensor_value threshold_sound_lower = {0};
 
 static struct gpio_dt_spec led_show0 = GPIO_DT_SPEC_GET(DT_ALIAS(ledshow0), gpios);
 static struct gpio_dt_spec led_show1 = GPIO_DT_SPEC_GET(DT_ALIAS(ledshow1), gpios);
@@ -138,9 +139,9 @@ event_t get_event(void) {
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-/* BEGIN: LEDs should only be modified within this section to proven't bugs */
-//////////////////////////////////////////////////////////////////////////////
+/****************************************************************************/
+/* BEGIN: LEDs should only be modified within this section to prevent bugs */
+/****************************************************************************/
 
 /* Initialize all LEDs */
 void leds_init() {
@@ -262,11 +263,12 @@ void leds_show_toggle_config_select(toggle_config_select_t toggle_config_select)
 
 void leds_show_level(uint16_t value, uint16_t min_level, uint16_t max_level) {
     leds_show_off();
-    int num_of_led_to_turn_on = ((value - min_level) * NUM_OF_SHOW_LEDS) / (max_level - min_level);
-    gpio_pin_set_dt(&led_show0, 1); // One LED is always on
+    uint8_t num_of_led_to_turn_on = ((value - min_level) * NUM_OF_SHOW_LEDS) / (max_level - min_level);
 
-    for (int i = 2; i <= num_of_led_to_turn_on; i++) {
-        if (i == 2) {
+    for (uint8_t i = 1; i <= num_of_led_to_turn_on; i++) {
+        if (i == 1) {
+            gpio_pin_set_dt(&led_show0, 1);
+        } else if (i == 2) {
             gpio_pin_set_dt(&led_show1, 1);
         } else if (i == 3) {
             gpio_pin_set_dt(&led_show2, 1);
@@ -400,7 +402,7 @@ void do_state_v4(void) {
     led_selected_mode_on(visual_mode);
     leds_show_visual_select(sound_select);
     // TODO: have proper limits and values
-    leds_show_level((uint16_t)sound.val1, 0, 100);
+    leds_show_level((uint16_t)sound.val1, 50, 500);
 }
 
 void enter_state_v4(void) {
@@ -417,7 +419,7 @@ const state_t state_v4 = {
     enter_state_v4,
     do_state_v4,
     exit_state_v4,
-    300
+    10
 };
 
 
@@ -646,21 +648,8 @@ void interface_init() {
 }
 
 void user_interface_task() {
-    printk("Started\n");
+    printk("Started User Interface task\n");
     interface_init();
-    // TODO: remove
-    config.val1 = 0;
-    config.val2 = 0;
-    temperature.val1 = 0;
-    temperature.val2 = 0;
-    humidity.val1 = 10;
-    humidity.val2 = 0;
-    pressure.val1 = 40;
-    pressure.val2 = 0;
-    motion.val1 = 60;
-    motion.val2 = 0;
-    sound.val1 = 90;
-    sound.val2 = 0;
     state_t current_state = state_v0;
     event_t evt = no_evt;
 
@@ -682,7 +671,6 @@ void user_interface_task() {
 
 void main_task() {
     const struct device *dev = DEVICE_DT_GET_ANY(zephyr_beata);
-    //struct sensor_value temperature, humidity, pressure, motion, sound;
     printk("*******************************************\n");
 
     while (!device_is_ready(dev)) {
@@ -754,6 +742,7 @@ void main_task() {
     printk("*******************************************\n\n");
     k_msleep(3000);
 
+    static uint8_t iteration = 0;
     for (;;) {
         if (update_conf) {
             printk("Writing new configurations...\n");
@@ -787,17 +776,21 @@ void main_task() {
             printk("ERROR: Could not fetch 'MOTION' from sensor node.\n");
         }
 
-        printk("============ SENSOR READINGS ==============\n");
-        printk("Humidity (%%): %d.%02d\n", humidity.val1, humidity.val2);
-        printk("Pressure (hPa): %d.%02d\n", pressure.val1, pressure.val2);
-        printk("Temperature (C): %d.%02d\n", temperature.val1, temperature.val2);
-        printk("Has motion (bool): %d\n", motion.val1);
-        printk("Sound level: %d\n", sound.val1);
-        printk("===========================================\n\n");
+        if (iteration == 0) {
+            printk("============ SENSOR READINGS ==============\n");
+            printk("Humidity (%%): %d.%02d\n", humidity.val1, humidity.val2);
+            printk("Pressure (hPa): %d.%02d\n", pressure.val1, pressure.val2);
+            printk("Temperature (C): %d.%02d\n", temperature.val1, temperature.val2);
+            printk("Has motion (bool): %d\n", motion.val1);
+            printk("Sound level: %d\n", sound.val1);
+            printk("===========================================\n\n");
+        }
+
+        iteration++;
+        iteration %= 20;
         k_msleep(SLEEP_TIME);
     }
 }
 
-//K_THREAD_DEFINE(button_thread, STACK_SIZE, button_task, NULL, NULL, NULL, 1, 0, 0);
 K_THREAD_DEFINE(button_thread, STACK_SIZE, user_interface_task, NULL, NULL, NULL, 1, 0, 0);
-//K_THREAD_DEFINE(main_thread, STACK_SIZE, main_task, NULL, NULL, NULL, 1, 0, 0);
+K_THREAD_DEFINE(main_thread, STACK_SIZE, main_task, NULL, NULL, NULL, 1, 0, 0);
